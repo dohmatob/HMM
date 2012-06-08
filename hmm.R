@@ -17,12 +17,12 @@ generate <- function(transition, emission, initial,T)
     n <- length(initial)
     o <- ncol(B)
     t <- 1
-    start <- pick(S,initial)
+    start <- pick(1:n,initial)
     seq <- c()
     while (t<=T)
       {
         seq <- append(seq,pick(1:o,emission[start,]))
-        start <- pick(S,transition[start,])
+        start <- pick(1:n,transition[start,])
         t <- t+1
       }
 
@@ -102,10 +102,10 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
     {
       if (t==1)
         {
-            alphatilde[t,] <- initial*emission[,which(observables==observation[t])]
-            scalers[t] <- 1/sum(alphatilde[t,])
-            alphahat[t,] <- scalers[t]*alphatilde[t,]
-          }
+          alphatilde[t,] <- initial*emission[,which(observables==observation[t])]
+          scalers[t] <- 1/sum(alphatilde[t,])
+          alphahat[t,] <- scalers[t]*alphatilde[t,]
+        }
       else
         {
           for (i in 1:n)
@@ -156,93 +156,111 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
   probability <- exp(loglikelihood)
 
   ## --[ render results ]--
-  return (list(alphahat=alphahat,betahat=betahat,loglikelihood=loglikelihood,probability=probability,gammahat=gammahat,epsilonhat=epsilonhat))
+  return (list(scalers=scalers,alphahat=alphahat,betahat=betahat,loglikelihood=loglikelihood,probability=probability,gammahat=gammahat,epsilonhat=epsilonhat))
 }
           
 ###########################################################
 # THE BAUM-WELCH EM (EXPECTATION MAXIMIZATION) ALGORITHM
 ###########################################################
 baumwelch <- function(observables, hidden, observations, transition, emission, initial,
-                      iter=100, # computation budget
+                      maxiter=1000, # computation budget
                       tol=1e-7 # tolerance level for convergence
                       )
 {
-  lo <- length(observables)
-  n <- length(initial)
-  L <- length(observations)
+  no <- length(observations)
+  n <- length(hidden)
+  m <- length(observables)
+  iter <- 0
   loglikelihood <- -Inf
-  count <- 0
+
   while (TRUE)
     {
-      if (count>iter)
+      ## --[ check whether we still have computation budget left ]--
+      if (iter>maxiter)
         {
-          print("OUT OF COMPUTATION BUDGET!")
+          print ('OUT OF COMPUTATION BUDGET')
           break
         }
+      print(list(iteration=iter,transition=transition,emission=emission,initial=initial))      
+      iter <- iter+1
 
-      print(list(iteration=count,transition=transition,emission=emission,initial=initial))
-      A <- transition*0
-      B <- emission*0
-      d <- initial*0
-      u <- array(0, dim=c(L,n,n))
-      v <- array(0, dim=c(L,n))
-      w <- array(0, dim=c(L,n,lo))
-      x <- v
-      for (l in 1:L)
+      ## --[ initialize next model ]--
+      A <- matrix(0,ncol=n,nrow=n) # transition matrix of next model
+      B <- matrix(0,ncol=m,nrow=n) # emission matrix
+      d <- array(0,dim=c(n))
+      u <- array(0, dim=c(no,n,n))
+      v <- array(0, dim=c(no,n))
+      w <- array(0, dim=c(no,n,m))
+      x <- array(0, dim=c(no,m))
+      l <- 0
+
+      ## --[ learn ]--
+      for (o in 1:no)
         {
-          observation <- observations[[l]]
+          observation <- observations[[o]]
           T <- length(observation)
-          fb <- forwardbackward(observables, hidden, observation, transition, emission, initial)
-          for (i in  1:n)
+          fb <- forwardbackward(O,S,observation,transition,emission,initial)
+          l <- l+fb$loglikelihood
+          for (i in 1:n)
             {
-              d[i] <- d[i]+fb$gammahat[1,i]
-              v[l,i] <- v[l,i]+sum(fb$gammahat[1:(T-1),i])
-              x[l,i] <- x[l,i]+sum(fb$gammahat[,i])
+              d[i] <- d[i]+fb$gamma[1,i]
+              for (t in 1:T)
+                {
+                  x[o,i] <- x[o,i]+fb$gamma[t,i]
+                  if (t<T)
+                    {
+                      v[o,i] <- v[o,i]+fb$gamma[t,i]
+                    }
+                }
               for (j in 1:n)
                 {
-                  u[l,i,j] <- u[l,i,j]+sum(fb$epsilonhat[,i,j])
+                  if (T>1)
+                    {
+                      for (t in 1:(T-1))
+                        {
+                          u[o,i,j] <- u[o,i,j]+fb$epsilon[t,i,j]
+                        }
+                    }
                 }
-              
-              for (z in 1:lo)
+              for (j in 1:m)
                 {
                   for (t in 1:T)
                     {
-                      if (observables[z]==observation[t])
+                      if (observables[j]==observation[t])
                         {
-                          w[l,i,z] <- w[l,i,z]+fb$gammahat[t,i]
+                          w[o,i,j] <- w[o,i,j]+fb$gamma[t,i]
                         }
                     }
                 }
             }
         }
-      
-      d <- d/sum(d)
+      pi <- d/no
       for (i in 1:n)
         {
           for (j in 1:n)
             {
               A[i,j] <- sum(u[,i,j])/sum(v[,i])
             }
-          for (z in 1:lo)
+          for (j in 1:m)
             {
-              B[i,z] <- sum(w[,i,z])/sum(x[,i])
+              B[i,j] <- sum(w[,i,j])/sum(x[,i])
             }
         }
       
-      gain <- fb$loglikelihood-loglikelihood
-      print(list(loglikelihood=fb$loglikelihood,gain=gain))
-      if (gain<tol)
-        {
-          print('CONVERGED.')
-          break
-        }
-
-      loglikelihood <- fb$loglikelihood
-      count <- count+1
-      initial <- d
+      percentgain <- (l-loglikelihood)*100/abs(l)
+      print(list(loglikelihood=l,percentgain=percentgain))
       transition <- A
       emission <- B
+      initial <- pi
+      loglikelihood <- l
+      if (percentgain<tol)
+        {
+          print ('CONVERGED.')
+          break
+        }
     }
+  
+  return (list(transition=transition,emission=emission,initial=initial))
 }
 
 #################
