@@ -294,13 +294,13 @@ baumwelch <- function(observables, hidden, observations, transition, emission, i
           print ('CONVERGED (TO GLOBAL OPTIMUM).')
           break
         }
-      percentgain <- (model$loglikelihood-loglikelihood)*100/abs(model$loglikelihood)
-      print(list(loglikelihood=model$loglikelihood,percentgain=percentgain))
+      relativegain <- (model$loglikelihood-loglikelihood)/abs(model$loglikelihood)
+      print(list(loglikelihood=model$loglikelihood,relativegain=relativegain))
       transition <- model$transition
       emission <- model$emission
       initial <- model$initial
       loglikelihood <- model$loglikelihood
-      if (percentgain<tol)
+      if (relativegain<tol)
         {
           print ('CONVERGED.')
           break
