@@ -6,13 +6,13 @@
 ################################################
 pick <- function(values, probabilities)
   {
-    return (sample(values,1,replace=TRUE, prob=probabilities))
+    return (sample(values,1,replace=TRUE,prob=probabilities))
   }
 
 #######################################################
 # FUNCTION TO GENERATE OBSERVATION SEQUENCE FROM HMM
 #######################################################
-generate <- function(transition, emission, initial,T)
+generate <- function(observables, transition, emission, initial,T)
   {
     n <- length(initial)
     o <- ncol(B)
@@ -26,7 +26,30 @@ generate <- function(transition, emission, initial,T)
         t <- t+1
       }
 
-    return (seq)
+    return (observables[seq])
+  }
+
+########################################################
+# FUNCTION TO GENERATE OBSERVATION SEQUENCES FROM HMM
+########################################################
+generatebatch <- function(observables, transition, emission, initial,
+                          N, # number of observation sequences to generate
+                          l=2, # infimum length of observation sequence
+                          L=20 # suprimum length of observation sequence
+                          )
+  {
+    seqs <- list()
+    count <- 0
+    ldensity <- rep(1/(L-l+1),(L-l+1))
+    while (count<N)
+      {
+        T <- pick(l:L,ldensity)
+        seq <- generate(observables, transition, emission, initial, T)
+        seqs[[count+1]] <- seq
+        count <- count+1
+      }
+
+    return (seqs)
   }
 
 ##########################
@@ -35,19 +58,25 @@ generate <- function(transition, emission, initial,T)
 viterbi <- function(observables, # states that can be observed
                     hidden, # hidden/internal states
                     observation, transition, emission,
-                    initial # initial distribution 
+                    initial=NULL # initial distribution 
                     )
 {
+  ## --[ some corrections ]--
+  n <- length(hidden) # number of (hidden/internal) states
+  T <- length(observation) 
+  if (length(initial)==0 || T<2)
+    {
+      initial <- rep(1,n)/n
+    }
+  
   ## --[ take logs of all propabilities, so we don't suffer underflow, etc. ]--
   log2initial <- log2(initial)
   log2transition <- log2(transition)
   log2emission <- log2(emission)
   
   ## --[ initializations ]--
-  n <- length(hidden) # number of (hidden/internal) states
-  T <- length(observation) 
   delta <- matrix(0,ncol=n,nrow=T)
-  phi <- delta
+  phi <- matrix(rep(hidden,T),byrow=T,ncol=n)
   delta[1,] <- log2initial+log2emission[,which(observables==observation[1])]
 
   ## --[ iteratively construct most probable path ]--
@@ -67,7 +96,7 @@ viterbi <- function(observables, # states that can be observed
   ## --[ calculate probability of MAP (Maximum A Posteri) path ]--
   probability <- 2**max(delta[T,])
 
-  ## --[ gather-up results ]-- 
+  ## --[ gather-up results ]--
   state <- hidden[which.max(delta[T,])]
   path=c(state) # MAP path
   t <- T-1
@@ -172,7 +201,7 @@ learn <- function(observables, hidden, observations,transition, emission, initia
     u <- array(0, dim=c(no,n,n))
     v <- array(0, dim=c(no,n))
     w <- array(0, dim=c(no,n,m))
-    x <- array(0, dim=c(no,m))
+    x <- array(0, dim=c(no,n))
 
     ## --[ process all observations ]--
     for (o in 1:no)
@@ -238,7 +267,7 @@ learn <- function(observables, hidden, observations,transition, emission, initia
 ###########################################################
 baumwelch <- function(observables, hidden, observations, transition, emission, initial,
                       maxiter=1000, # computation budget
-                      tol=1e-7 # tolerance level for convergence
+                      tol=1e-3 # tolerance level for convergence
                       )
 {
   iter <- 0
@@ -259,6 +288,12 @@ baumwelch <- function(observables, hidden, observations, transition, emission, i
       model <- learn(observables, hidden, observations, transition, emission, initial)
 
       ## --[ housekeeping ]--
+      if (model$loglikelihood==0)
+        {
+          print(list(loglikelihood=model$loglikelihood))
+          print ('CONVERGED (TO GLOBAL OPTIMUM).')
+          break
+        }
       percentgain <- (model$loglikelihood-loglikelihood)*100/abs(model$loglikelihood)
       print(list(loglikelihood=model$loglikelihood,percentgain=percentgain))
       transition <- model$transition
@@ -272,7 +307,7 @@ baumwelch <- function(observables, hidden, observations, transition, emission, i
         }
     }
   
-  return (list(transition=transition,emission=emission,initial=initial))
+  return (list(transition=transition,emission=emission,initial=initial,loglikelihood=loglikelihood))
 }
 
 #################
@@ -280,14 +315,13 @@ baumwelch <- function(observables, hidden, observations, transition, emission, i
 #################
 demo <- function()
 {
-  S <- 0:3 # hidden states
-  O <- c('R','B','Y') # observable states
-  Y <- c("R","Y","B","B","R","Y","R") # observation
-  A <- matrix(c(0,1,0,0,0,0.2,0.5,0.3,0,0,0.4,0.6,1,0,0,0),ncol=4,byrow=T) # transition
-  B <- matrix(c(3,2,5,7,2,1,9,0,1,2,8,0)/10,ncol=3,byrow=T) # emission
-  initial <- c(1,0,0,0) # initial distribution
+  hidden <- 1:3 # hidden states
+  observables <- 0:1 # observable states
+  transition <- matrix(c(3,5,2,0,3,7,0,0,1)/10,byrow=T,ncol=3)
+  emission <- matrix(c(2,0,1,1,0,2)/2,byrow=T,ncol=2)
+  initial <- c(6,4,0)/10 # initial distribution
+  observations <- list(c(0,0,1,1))
   
-  ## --[ run the algos ]--
-  print (viterbi(O,S,Y,A,B,initial))
-  print (baumwelch(O,S,list(Y),A,B,initial))
+  ## --[ run baumwelch ]--
+  solution <- baumwelch(observables,hidden,observations,transition,emission,initial)
 }
