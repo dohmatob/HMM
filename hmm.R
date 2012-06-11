@@ -64,7 +64,7 @@ viterbi <- function(observables, # states that can be observed
   ## --[ some corrections ]--
   n <- length(hidden) # number of (hidden/internal) states
   T <- length(observation) 
-  if (length(pi)==0 || T<2)
+  if (length(pi)==0)
     {
       pi <- rep(1,n)/n
     }
@@ -352,8 +352,9 @@ martian <- function()
     pi <- pi/sum(pi) # normalization
     print('< done.')
     
-    ## prepare 1000 lessons (this is the training set for the Baum-Welch)
-    print('> preparing 1000 lessons from Brown Corpus ..')
+    ## prepare lessons (this is the training set for the Baum-Welch)
+    nlessons <- 1000
+    print(paste(paste('> preparing',nlessons,sep=' '),'lessons from Brown Corpus ..',sep=' '))
     lessons <- sample(corpus,size=1000,replace=FALSE,prob=rep(1,length(corpus))/length(corpus))
     print('< done.')
 
@@ -367,17 +368,18 @@ martian <- function()
     lines(model$emission[2,],type='b',col='red')
 
     ## interprete results
-    kind <- viterbi(observables,hidden,'a',model$transition,model$emission)
+    kind <- viterbi(observables,hidden,'a',model$transition,model$emission,model$pi)
     hidden <- c('vowel','consonant')
     if (kind$path==2)
       {
         hidden <- hidden[2:1]
       }
 
-    print("Hi, I'm the Martian. This is what I've learnt about your language after 1000 lessons:")
+    print("Hi, I'm the Martian. This is what I've learnt about your language:")
+    print("First of all, there are two kinds of letters: I'll call them vowels and consonants.")
     for (letter in letters)
       {
-        kind <- viterbi(observables,hidden,letter,model$transition,model$emission)
+        kind <- viterbi(observables,hidden,letter,model$transition,model$emission,model$pi)
         print(paste(paste(letter,'is a',sep=' '),kind$path,sep=' '))
       }
   }
