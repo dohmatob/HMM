@@ -325,3 +325,59 @@ demo <- function()
   ## --[ run baumwelch ]--
   solution <- baumwelch(observables,hidden,observations,transition,emission,initial)
 }
+
+##################
+# MARTIAN DEMO
+##################
+martian <- function()
+  {
+    ## load file containing Brown corpus and english alphabet (as R objects)
+    print(">loading Brown Corpus and english alphabet ..")
+    source('corpus.R')
+    hidden <- 1:2
+    observables <- letters
+    print("< done.")
+
+    print("> preparing initial HMM ..")
+    # initial transition matrix
+    transition <- matrix(rep(1,2)/2+rnorm(4,sd=0.001),ncol=2) # uniform distribution perturbed by N(0,0.001)
+    for (row in 1:nrow(transition)) { transition[row,] <- transition[row,]/sum(transition[row,]) } # normalization
+
+    # initial emission matrix
+    emission <- matrix(rep(1,2*26)/(2*26)+rnorm(2*26,sd=0.001),ncol=26) # uniform distribution perturbed by N(0,0.001)
+    for (row in 1:nrow(emission)) { emission[row,] <- emission[row,]/sum(emission[row,]) } # normalization
+
+    # initial pi
+    pi <- rep(1,2)/2+rnorm(2,sd=0.001) # uniform distribution perturbed by N(0,0.001)
+    pi <- pi/sum(pi) # normalization
+    print('< done.')
+    
+    ## prepare 1000 lessons (this is the training set for the Baum-Welch)
+    print('> preparing 1000 lessons from Brown Corpus ..')
+    lessons <- sample(corpus,size=1000,replace=FALSE,prob=rep(1,length(corpus))/length(corpus))
+    print('< done.')
+
+    ## run Baum-Welch algorithm
+    print('> running Baum-Welch algorithm ..')
+    model <- baumwelch(observables,hidden,lessons,transition,emission,pi,tol=1e-9,maxiter=200)
+    print('< done.')
+
+    ## some plots
+    plot(model$emission[1,],type='b',col='blue',xlab='letter',ylab='emission probability',ylim=range(model$emission,model$emission))    
+    lines(model$emission[2,],type='b',col='red')
+
+    ## interprete results
+    kind <- viterbi(observables,hidden,'a',model$transition,model$emission)
+    hidden <- c('vowel','consonant')
+    if (kind$path==2)
+      {
+        hidden <- hidden[2:1]
+      }
+
+    print("Hi, I'm the Martian. This is what I've learnt about your language after 1000 lessons:")
+    for (letter in letters)
+      {
+        kind <- viterbi(observables,hidden,letter,model$transition,model$emission)
+        print(paste(paste(letter,'is a',sep=' '),kind$path,sep=' '))
+      }
+  }
