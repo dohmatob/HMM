@@ -12,12 +12,12 @@ pick <- function(values, probabilities)
 #######################################################
 # FUNCTION TO GENERATE OBSERVATION SEQUENCE FROM HMM
 #######################################################
-generate <- function(observables, transition, emission, initial,T)
+generate <- function(observables, transition, emission, pi,T)
   {
-    n <- length(initial)
+    n <- length(pi)
     o <- ncol(B)
     t <- 1
-    start <- pick(1:n,initial)
+    start <- pick(1:n,pi)
     seq <- c()
     while (t<=T)
       {
@@ -32,7 +32,7 @@ generate <- function(observables, transition, emission, initial,T)
 ########################################################
 # FUNCTION TO GENERATE OBSERVATION SEQUENCES FROM HMM
 ########################################################
-generatebatch <- function(observables, transition, emission, initial,
+generatebatch <- function(observables, transition, emission, pi,
                           N, # number of observation sequences to generate
                           l=2, # infimum length of observation sequence
                           L=20 # suprimum length of observation sequence
@@ -44,7 +44,7 @@ generatebatch <- function(observables, transition, emission, initial,
     while (count<N)
       {
         T <- pick(l:L,ldensity)
-        seq <- generate(observables, transition, emission, initial, T)
+        seq <- generate(observables, transition, emission, pi, T)
         seqs[[count+1]] <- seq
         count <- count+1
       }
@@ -58,26 +58,26 @@ generatebatch <- function(observables, transition, emission, initial,
 viterbi <- function(observables, # states that can be observed
                     hidden, # hidden/internal states
                     observation, transition, emission,
-                    initial=NULL # initial distribution 
+                    pi=NULL # initial distribution 
                     )
 {
   ## --[ some corrections ]--
   n <- length(hidden) # number of (hidden/internal) states
   T <- length(observation) 
-  if (length(initial)==0 || T<2)
+  if (length(pi)==0 || T<2)
     {
-      initial <- rep(1,n)/n
+      pi <- rep(1,n)/n
     }
   
   ## --[ take logs of all propabilities, so we don't suffer underflow, etc. ]--
-  log2initial <- log2(initial)
+  log2pi <- log2(pi)
   log2transition <- log2(transition)
   log2emission <- log2(emission)
   
   ## --[ initializations ]--
   delta <- matrix(0,ncol=n,nrow=T)
   phi <- matrix(rep(hidden,T),byrow=T,ncol=n)
-  delta[1,] <- log2initial+log2emission[,which(observables==observation[1])]
+  delta[1,] <- log2pi+log2emission[,which(observables==observation[1])]
 
   ## --[ iteratively construct most probable path ]--
   t <- 2 # really, t-1 is time
@@ -113,10 +113,10 @@ viterbi <- function(observables, # states that can be observed
 ##############################################
 # THE BAUM-WELCH FORWARD-BACKWARD ALGORITHM
 ##############################################
-forwardbackward <- function(observables, hidden, observation, transition, emission, initial)
+forwardbackward <- function(observables, hidden, observation, transition, emission, pi)
 {
   ## --[ initializations ]--
-  n <- length(initial)
+  n <- length(pi)
   T <- length(observation)
   scalers <- rep(0,T) # these things will prevent underflow and ease the calculus
   epsilonhat <- array(0,dim=c(T-1,n,n))
@@ -131,7 +131,7 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
     {
       if (t==1)
         {
-          alphatilde[t,] <- initial*emission[,which(observables==observation[t])]
+          alphatilde[t,] <- pi*emission[,which(observables==observation[t])]
           scalers[t] <- 1/sum(alphatilde[t,])
           alphahat[t,] <- scalers[t]*alphatilde[t,]
         }
@@ -188,7 +188,7 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
   return (list(scalers=scalers,alphahat=alphahat,betahat=betahat,loglikelihood=loglikelihood,probability=probability,gammahat=gammahat,epsilonhat=epsilonhat))
 }
 
-learn <- function(observables, hidden, observations,transition, emission, initial)
+learn <- function(observables, hidden, observations,transition, emission, pi)
   {
     ## --[ initialization ]--
     loglikelihood <- 0
@@ -208,7 +208,7 @@ learn <- function(observables, hidden, observations,transition, emission, initia
       {
         observation <- observations[[o]]
         T <- length(observation)
-        fb <- forwardbackward(observables,hidden,observation,transition,emission,initial)
+        fb <- forwardbackward(observables,hidden,observation,transition,emission,pi)
         loglikelihood <- loglikelihood+fb$loglikelihood
         for (i in 1:n)
           {
@@ -221,16 +221,16 @@ learn <- function(observables, hidden, observations,transition, emission, initia
                     v[o,i] <- v[o,i]+fb$gamma[t,i]
                   }
               }
-            for (j in 1:n)
-                {
-                  if (T>1)
-                    {
-                      for (t in 1:(T-1))
-                        {
-                          u[o,i,j] <- u[o,i,j]+fb$epsilon[t,i,j]
-                        }
-                    }
-                }
+            if (T>1)
+              {
+                for (t in 1:(T-1))
+                  {          
+                    for (j in 1:n)
+                      {
+                        u[o,i,j] <- u[o,i,j]+fb$epsilon[t,i,j]
+                      }
+                  }
+              }
             for (j in 1:m)
               {
                 for (t in 1:T)
@@ -259,13 +259,13 @@ learn <- function(observables, hidden, observations,transition, emission, initia
       }
 
     ## --[ render results ]--
-    return (list(loglikelihood=loglikelihood,transition=A,emission=B,initial=pi))
+    return (list(loglikelihood=loglikelihood,transition=A,emission=B,pi=pi))
   }
 
 ###########################################################
 # THE BAUM-WELCH EM (EXPECTATION MAXIMIZATION) ALGORITHM
 ###########################################################
-baumwelch <- function(observables, hidden, observations, transition, emission, initial,
+baumwelch <- function(observables, hidden, observations, transition, emission, pi,
                       maxiter=1000, # computation budget
                       tol=1e-3 # tolerance level for convergence
                       )
@@ -281,11 +281,11 @@ baumwelch <- function(observables, hidden, observations, transition, emission, i
           print ('OUT OF COMPUTATION BUDGET')
           break
         }
-      print(list(iteration=iter,transition=transition,emission=emission,initial=initial))      
+      print(list(iteration=iter,transition=transition,emission=emission,pi=pi))      
       iter <- iter+1
 
       ## --[ learn ]--
-      model <- learn(observables, hidden, observations, transition, emission, initial)
+      model <- learn(observables, hidden, observations, transition, emission, pi)
 
       ## --[ housekeeping ]--
       if (model$loglikelihood==0)
@@ -298,7 +298,7 @@ baumwelch <- function(observables, hidden, observations, transition, emission, i
       print(list(loglikelihood=model$loglikelihood,relativegain=relativegain))
       transition <- model$transition
       emission <- model$emission
-      initial <- model$initial
+      pi <- model$pi
       loglikelihood <- model$loglikelihood
       if (relativegain<tol)
         {
@@ -307,7 +307,7 @@ baumwelch <- function(observables, hidden, observations, transition, emission, i
         }
     }
   
-  return (list(transition=transition,emission=emission,initial=initial,loglikelihood=loglikelihood))
+  return (list(transition=transition,emission=emission,pi=pi,loglikelihood=loglikelihood))
 }
 
 #################
@@ -319,11 +319,11 @@ demo <- function()
   observables <- 0:1 # observable states
   transition <- matrix(c(3,5,2,0,3,7,0,0,1)/10,byrow=T,ncol=3)
   emission <- matrix(c(2,0,1,1,0,2)/2,byrow=T,ncol=2)
-  initial <- c(6,4,0)/10 # initial distribution
+  pi <- c(6,4,0)/10 # initial distribution
   observations <- list(c(0,0,1,1))
   
   ## --[ run baumwelch ]--
-  solution <- baumwelch(observables,hidden,observations,transition,emission,initial)
+  solution <- baumwelch(observables,hidden,observations,transition,emission,pi)
 }
 
 ##################
