@@ -16,10 +16,13 @@ typedef std::vector<unsigned int> sequence;
 
 std::ostream &operator<<(std::ostream &cout, sequence s)
 {
+  cout << "[" << s.size() << "](";
   for (int i = 0; i < s.size(); i++)
     {
-      cout << s[i] << " ";
+      cout << s[i] << (i < s.size()-1 ? "," : "");
     }
+
+  cout << ")";
 
   return cout;
 }
@@ -102,9 +105,6 @@ private:
   matrix<real_type> _log2emission;
   vector<real_type> _log2pi;
 
-protected:
-  void learn(std::vector<sequence> obseqs);
-
 public:
   HMM(matrix<real_type> transition, 
       matrix<real_type> emission, 
@@ -123,10 +123,13 @@ public:
   boost::tuple<matrix<real_type>, // alpha-hat
 	       matrix<real_type>, // beta-hat
 	       matrix<real_type>, // gamma-hat
-	       boost::multi_array<real_type,3> // epsilon-hat 
+	       boost::multi_array<real_type,3>, // epsilon-hat 
+	       real_type // likelihood
 	       > forward_backward(const sequence &obseq);
   
-  void learn(const std::vector<sequence> &obseqs);
+  boost::tuple<HMM, // the learned model
+	       real_type // the likelihood sequence of observations, under this new model
+	       > learn(const std::vector<sequence> &obseqs);
 
   void baum_welch(const std::vector<sequence> &obseqs, 
 		 real_type tolerance, 
@@ -208,7 +211,7 @@ path_t HMM::viterbi(const sequence &obseq)
 	}
     }
   
-  // set last node on optima path
+  // set last node on optimal path
   tmp = row(delta,T-1);
   am = argmax(tmp);
   path.likelihood = am.value;
@@ -230,7 +233,8 @@ path_t HMM::viterbi(const sequence &obseq)
 boost::tuple<matrix<real_type>, // alpha-hat
 	     matrix<real_type>, // beta-hat
 	     matrix<real_type>, // gamma-hat
-	     boost::multi_array<real_type,3> // epsilon-hat 
+	     boost::multi_array<real_type,3>, // epsilon-hat 
+	     real_type // likelihood
 	     > HMM::forward_backward(const sequence &obseq)
 {
   // veriables
@@ -245,6 +249,7 @@ boost::tuple<matrix<real_type>, // alpha-hat
   matrix<real_type> gammahat(T,_nhidden);
   vector<real_type> tmp(_nhidden);
   boost::multi_array<real_type,3> epsilonhat(boost::extents[T-1][_nhidden][_nhidden]);
+  real_type likelihood;
 
   // compute forward (alpha) variables 
   for (int time = 0; time < T; time++)
@@ -298,17 +303,113 @@ boost::tuple<matrix<real_type>, // alpha-hat
 	}
     }
 
-  return boost::make_tuple(alphahat,betahat,gammahat,epsilonhat);
+  likelihood = -1*sum(vlog2(scalers));
+  return boost::make_tuple(alphahat,betahat,gammahat,epsilonhat,likelihood);
 }
 
-void HMM::learn(std::vector<sequence> obseqs)
+boost::tuple<HMM, // the learned model
+	     real_type // the likelihood sequence of observations, under this new model
+	     > HMM::learn(const std::vector<sequence> &obseqs)
 {
+  // local typedefs
+  typedef boost::multi_array<real_type,3> floats3D;
+  typedef floats3D::index_range range;
+  floats3D::index_gen indices;
+
+  // variables 
+  real_type likelihood;
+  matrix<real_type> A(_nhidden,_nhidden); // transition matrix for learned model
+  matrix<real_type> B(_nhidden,_nobservables); // emission matrix for learned model
+  vector<real_type> pi(_nhidden); // initial distribution for learned model
+  boost::multi_array<real_type,3> u(boost::extents[obseqs.size()][_nhidden][_nhidden]);
+  boost::multi_array<real_type,3> w(boost::extents[obseqs.size()][_nhidden][_nobservables]);
+  matrix<real_type> v(obseqs.size(),_nhidden);
+  matrix<real_type> x(obseqs.size(),_nhidden);
+  int k,i,j,time;
+
+  // initializations
+  pi = zero_vector<real_type>(_nhidden);
+  v = zero_matrix<real_type>(obseqs.size(),_nhidden);
+  x = zero_matrix<real_type>(obseqs.size(),_nhidden);
+  std::fill(u.data(),u.data()+u.num_elements(),0);
+  std::fill(w.data(),w.data()+w.num_elements(),0);
+  
+  // process all observations
+  for (k = 0; k < obseqs.size(); k++)
+    {
+      // length of observation
+      int T = obseqs[k].size();
+
+      // run Forward-Backward 
+      boost::tuple<matrix<real_type>, // alpha-hat
+		   matrix<real_type>, // beta-hat
+		   matrix<real_type>, // gamma-hat
+		   boost::multi_array<real_type,3>, // epsilon-hat 
+		   real_type // likelihood
+		   >  fb = forward_backward(obseqs[k]);
+      matrix<real_type> alphahat = boost::get<0>(fb);
+      matrix<real_type> betahat = boost::get<1>(fb);
+      matrix<real_type> gammahat = boost::get<2>(fb);
+      boost::multi_array<real_type,3> epsilonhat = boost::get<3>(fb);
+
+      // update likelihood
+      likelihood += boost::get<4>(fb);
+      
+      // calculate auxiliary tensors
+      for (i = 0; i < _nhidden; i++)
+	{
+	  pi[i] += gammahat(0,i);
+	  for (time = 0; time < T; time++)
+	    {
+	      x(k,i) += gammahat(time,i);
+	      if (time < T-1)
+		{
+		  v(k,i) += gammahat(time,i);		  
+		  for (j = 0; j < _nhidden; j++)
+		    {
+		      u[k][i][j] += epsilonhat[time][i][j];
+		    }
+		}
+	    }
+
+	  for (j = 0; j < _nobservables; j++)
+	    {
+	      for (time = 0; time < T; time++)
+		{
+		  if (obseqs[k][time] == j)
+		    {
+		      w[k][i][j] += gammahat(time,i);
+		    }
+		}
+	    }
+	}
+    }	 
+  
+  // compute learned model parameters
+  pi /= obseqs.size(); // normalization
+  for (i = 0; i < _nhidden; i++)
+    {
+      real_type total1 = sum(column(v,i));
+      real_type total2 = sum(column(x,i));
+      for (j = 0; j < _nhidden; j++)
+	{
+	  floats3D::array_view<1>::type view1Du = u[indices[range()][i][j]];
+	  A(i,j) = std::accumulate(view1Du.begin(),view1Du.end(),0.0)/total1;
+	}
+      for (j = 0; j < _nobservables; j++)
+	{
+	  floats3D::array_view<1>::type view1Dv = w[indices[range()][i][j]];
+	  B(i,j) = std::accumulate(view1Dv.begin(),view1Dv.end(),0.0)/total2;
+	}
+    }
+	  
+  return boost::make_tuple(HMM(A,B,pi),likelihood);
 }
 
 void HMM::baum_welch(const std::vector<sequence> &obseqs, 
-		    real_type tolerance, 
-		    unsigned int maxiter
-		    )
+		     real_type tolerance, 
+		     unsigned int maxiter
+		     )
 {
 }
 
@@ -392,16 +493,20 @@ int main(void)
       path = hmm.viterbi(sequences[i]);
       std::cout << path << std::endl;
     }
-
-  matrix<real_type> a;
-  matrix <real_type> b;
-  matrix<real_type> c;
+  
   boost::multi_array<real_type,3> d(boost::extents[10][2][2]);
   boost::tuple<matrix<real_type>, // alpha-hat
 	       matrix<real_type>, // beta-hat
 	       matrix<real_type>, // gamma-hat
-	       boost::multi_array<real_type,3> // epsilon-hat 
+	       boost::multi_array<real_type,3>, // epsilon-hat 
+	       real_type // likelyhood
 	       >  fb = hmm.forward_backward(sequences[0]);
   std::cout << boost::get<0>(fb) << std::endl;
+
+  boost::tuple<HMM,
+	       real_type
+	       > result = hmm.learn(sequences);
+
+  std::cout << boost::get<0>(result) << std::endl;
   return 0;
 }
