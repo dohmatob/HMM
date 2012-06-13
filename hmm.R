@@ -178,8 +178,8 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
     }
 
   ## --[ compute log-likelihood (resp. probability) of observation sequence ]--
-  loglikelihood <- -sum(log(scalers))
-  probability <- exp(loglikelihood)
+  loglikelihood <- -sum(log2(scalers))
+  probability <- 2**(loglikelihood)
 
   ## --[ render results ]--
   return (list(scalers=scalers,alphahat=alphahat,betahat=betahat,loglikelihood=loglikelihood,probability=probability,gammahat=gammahat,epsilonhat=epsilonhat))
