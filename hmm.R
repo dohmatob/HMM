@@ -132,8 +132,6 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
       if (t==1)
         {
           alphatilde[t,] <- pi*emission[,which(observables==observation[t])]
-          scalers[t] <- 1/sum(alphatilde[t,])
-          alphahat[t,] <- scalers[t]*alphatilde[t,]
         }
       else
         {
@@ -141,9 +139,9 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
             {
               alphatilde[t,i] <- sum(alphahat[t-1,]*transition[,i])*emission[i,which(observables==observation[t])]
             }
-          scalers[t] <- 1/sum(alphatilde[t,])
-          alphahat[t,] <- scalers[t]*alphatilde[t,]
         }
+      scalers[t] <- 1/sum(alphatilde[t,])
+      alphahat[t,] <- scalers[t]*alphatilde[t,]
     }
 
   ## --[ compute backward (beta) parameters ]--
@@ -151,8 +149,7 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
     {
       if (t==T)
         {
-          betatilde[T,] <- rep(1,n)
-          betahat[T,] <- scalers[T]*betatilde[T,]
+          betatilde[t,] <- rep(1,n)
         }
       else
         {
@@ -160,8 +157,8 @@ forwardbackward <- function(observables, hidden, observation, transition, emissi
             {
               betatilde[t,i] <- sum(transition[i,]*emission[,which(observables==observation[t+1])]*betahat[t+1,])
             }  
-          betahat[t,] <- scalers[t]*betatilde[t,]
         }
+      betahat[t,] <- scalers[t]*betatilde[t,]
     }
 
   ## --[ compute epsilon and gamma terms ]--
@@ -376,7 +373,7 @@ martian <- function()
       }
 
     print("Hi, I'm the Martian. This is what I've learnt about your language:")
-    print("First of all, there are two kinds of letters: I'll call them vowels and consonants.")
+    print("First of all, there are two kinds of letters: I'll call them vowels and consonants")
     for (letter in letters)
       {
         kind <- viterbi(observables,hidden,letter,model$transition,model$emission,model$pi)
