@@ -1,0 +1,21 @@
+              +++ (c) 2012 DOP (dohmatob elvis dopgima) +++
+
+INSTALLATION
+============
+chdir to the root directory (containing this README), and type the commands:
+
+$ cmake spike/
+$ make 
+
+RUN
+===
+Simply type:
+$ ./HMM
+
+
+DEPENDENCIES
+============
+- Boost c++ libraries (get from boost.org site)
+- cmake tool set
+
+GOOD LUCK!
