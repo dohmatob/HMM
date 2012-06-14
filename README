@@ -1,20 +1,26 @@
               +++ (c) 2012 DOP (dohmatob elvis dopgima) +++
 
-INSTALLATION
-============
+Tiny project on Hidden Markov Models. It is still in active dev. 
+
+Implements the Viterbi and Baum-Welch algorithms. Contains a demo to simulate 
+a Martian who learns vowels and consonants from a few random english words 
+(Jump to section 2, to run demo). 
+
+0. INSTALLATION
+===============
 chdir to the root directory (containing this README), and type the commands:
 
 $ cmake spike/
 $ make 
 
-RUN
-===
+1. RUN
+======
 Simply type:
 $ ./HMM
 
 
-DEPENDENCIES
-============
+2. DEPENDENCIES
+===============
 - Boost c++ libraries (get from boost.org site)
 - cmake tool set
 

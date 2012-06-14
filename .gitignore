@@ -1,0 +1,9 @@
+*~
+.exe
+*.o
+*.so
+*.bin
+#*
+*.pyc
+*.cmake
+*.marks
