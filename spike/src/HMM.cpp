@@ -545,8 +545,6 @@ std::vector<sequence_type> load_hmm_observations(const char *filename)
   std::string lineData;
   int wordcount = 0;
 
-  std::cout << "Loadin: HMM observation sequences from " << filename << " .." << std::endl;
-
   while(std::getline(input, lineData))
     {
       int d;
@@ -562,40 +560,45 @@ std::vector<sequence_type> load_hmm_observations(const char *filename)
 	  sequences.push_back(row);
 	}
     }
-  
-  std::cout << "Done (loaded " << wordcount << " observation sequence(s))." << std::endl;
-
+ 
   return sequences;
 }
 
 int main(void)
 {
   // XXX refactor main into unittest cases
-  std::vector<sequence_type> s;
+  std::cout << "Loadin: HMM parameters from files .." << std::endl;
   matrix<real_type> trans = load_hmm_matrix("corpus_transition.dat");
   matrix<real_type> em = load_hmm_matrix("corpus_emission.dat");
   vector<real_type> pi = load_hmm_vector("corpus_pi.dat");
+  std::cout << "Done.\n" << std::endl;  
   
   // initialize HMM object
   HMM hmm(trans,em,pi);
   std::cout << "HMM:\n" << hmm;
 
   // prepare data
-  s = load_hmm_observations("corpus_words.dat"); // load
+  std::cout << "Loadin: english words from corpus file .." << std::endl;
+  std::vector<sequence_type> corpus = load_hmm_observations("corpus_words.dat"); // load
+  std::cout << "Done (loaded " << corpus.size() << " words).\n" << std::endl;
 
-  // draw a random sample 
-  std::random_shuffle(s.begin(), s.end()); 
-  std::vector<sequence_type> sequences = std::vector<sequence_type>(s.begin(),s.begin()+1000); 
+
+  // draw a random sample
+  int nlessons = 1000;
+  std::cout << "Sampling " << nlessons << " words from corpus .." << std::endl;
+  std::random_shuffle(corpus.begin(), corpus.end()); 
+  std::vector<sequence_type> lessons = std::vector<sequence_type>(corpus.begin(),corpus.begin()+nlessons%corpus.size()); 
+  std::cout << "Done.\n" << std::endl;
 
   boost::tuple<sequence_type,
 	       real_type
-	       > path = hmm.viterbi(sequences[2]);
+	       > path = hmm.viterbi(lessons[2]);
 
-  std::cout << "The a posteriori most probable sequence of hidden states that generated the trace " << sequences[2] << " is " << boost::get<0>(path) << "." << std::endl;
-  std::cout << "Its (log) likelihood is " << boost::get<1>(path) << "." << std::endl;
+  std::cout << "The a posteriori most probable sequence of hidden states that generated the trace " << lessons[2] << " is " << boost::get<0>(path) << "." << std::endl;
+  std::cout << "Its (log) likelihood is " << boost::get<1>(path) << ".\n" << std::endl;
     
   // Bauw-Welch
-  hmm.baum_welch(sequences);  
+  hmm.baum_welch(lessons);  
   std::cout << "\nFinal HMM:\n" << hmm;
 
   std::cout << "Viterbi classification of the 26 symbols (cf. letters of the english alphabet):" << std::endl;
