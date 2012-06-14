@@ -115,11 +115,11 @@ public:
 	       > forward_backward(const sequence_type &obseq);
   
   boost::tuple<HMM, // the learned model
-	       real_type // the likelihood of sequences of observations, under this new model
+	       real_type // the likelihood of the sequences of observations, under this new model
 	       > learn(const std::vector<sequence_type> &obseqs);
 
   boost::tuple<HMM, // the learned model
-	       real_type // the likelihood of sequences of observations, under this new model
+	       real_type // the likelihood of the sequences of observations, under this new model
 	       > baum_welch(const std::vector<sequence_type> &obseqs, //
 			    real_type tolerance=1e-9, // tolerance level for convergence 
 			    unsigned int maxiter=200 // maximum number of iterations
@@ -313,7 +313,7 @@ boost::tuple<matrix<real_type>, // alpha-hat
 }
 
 boost::tuple<HMM, // the learned model
-	     real_type // the likelihood sequence of observations, under this new model
+	     real_type // the likelihood of the sequences of observations, under this new model
 	     > HMM::learn(const std::vector<sequence_type> &obseqs)
 {
   // local typedefs
@@ -412,7 +412,7 @@ boost::tuple<HMM, // the learned model
 }
 
 boost::tuple<HMM, // the learned model
-	     real_type // the likelihood sequence of observations, under this new model
+	     real_type // the likelihood of the sequences of observations, under this new model
 	     > HMM::baum_welch(const std::vector<sequence_type> &obseqs, 
 			       real_type tolerance, 
 			       unsigned int maxiter
