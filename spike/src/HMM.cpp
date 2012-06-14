@@ -572,16 +572,16 @@ int main(void)
 {
   // XXX refactor main into unittest cases
   std::vector<sequence_type> s;
-  matrix<real_type> trans = load_hmm_matrix("transition.dat");
-  matrix<real_type> em = load_hmm_matrix("emission.dat");
-  vector<real_type> pi = load_hmm_vector("pi.dat");
+  matrix<real_type> trans = load_hmm_matrix("corpus_transition.dat");
+  matrix<real_type> em = load_hmm_matrix("corpus_emission.dat");
+  vector<real_type> pi = load_hmm_vector("corpus_pi.dat");
   
   // initialize HMM object
   HMM hmm(trans,em,pi);
   std::cout << "HMM:\n" << hmm;
 
   // prepare data
-  s = load_hmm_observations("corpus.cpp"); // load
+  s = load_hmm_observations("corpus_words.dat"); // load
 
   // draw a random sample 
   std::random_shuffle(s.begin(), s.end()); 
