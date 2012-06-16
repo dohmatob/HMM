@@ -10,7 +10,7 @@ a Martian who learns vowels and consonants from a few random english words
 ===============
 chdir to the root directory (containing this README), and type the commands:
 
-$ cmake spike/
+$ cmake .
 $ make 
 
 1. RUN
