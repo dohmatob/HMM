@@ -10,9 +10,9 @@ int main(void)
 {
   // XXX refactor main into unittest cases
   std::cout << "Loadin: HMM parameters from files .." << std::endl;
-  matrix<real_type> trans = load_hmm_matrix("corpus_transition.dat");
-  matrix<real_type> em = load_hmm_matrix("corpus_emission.dat");
-  vector<real_type> pi = load_hmm_vector("corpus_pi.dat");
+  ublas::matrix<real_type> trans = load_hmm_matrix("data/corpus_transition.dat");
+  ublas::matrix<real_type> em = load_hmm_matrix("data/corpus_emission.dat");
+  ublas::vector<real_type> pi = load_hmm_vector("data/corpus_pi.dat");
   std::cout << "Done.\n" << std::endl;
 
   // initialize HMM object
@@ -21,7 +21,7 @@ int main(void)
 
   // prepare data
   std::cout << "Loadin: english words from corpus file .." << std::endl;
-  std::vector<sequence_type> corpus = load_hmm_observations("corpus_words.dat"); // load
+  std::vector<sequence_type> corpus = load_hmm_observations("data/corpus_words.dat"); // load
   std::cout << "Done (loaded " << corpus.size() << " words).\n" << std::endl;
 
 

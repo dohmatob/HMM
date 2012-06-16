@@ -16,9 +16,9 @@ std::ostream &operator<<(std::ostream &cout, sequence_type s)
   return cout;
 }
 
-vector<real_type> vlog(const vector<real_type> &u)
+ublas::vector<real_type> vlog(const ublas::vector<real_type> &u)
 {
-  vector<real_type> v(u.size());
+  ublas::vector<real_type> v(u.size());
 
   for (int i = 0; i < u.size(); i++)
     {
@@ -28,9 +28,9 @@ vector<real_type> vlog(const vector<real_type> &u)
   return v;
 }
 
-matrix<real_type> mlog(const matrix<real_type> &A)
+ublas::matrix<real_type> mlog(const ublas::matrix<real_type> &A)
 {
-  matrix<real_type> B(A.size1(),A.size2());
+  ublas::matrix<real_type> B(A.size1(),A.size2());
 
   for (int i = 0; i < A.size1(); i++)
     {
@@ -42,7 +42,7 @@ matrix<real_type> mlog(const matrix<real_type> &A)
 
 boost::tuple<int,
 	     real_type
-	     > argmax(vector<real_type> &u)
+	     > argmax(ublas::vector<real_type> &u)
 {
   int index = 0;
   real_type value = u(0);
@@ -59,9 +59,9 @@ boost::tuple<int,
   return boost::make_tuple(index,value);
 }
 
-HMM::HMM(matrix<real_type> transition,
-	 matrix<real_type> emission,
-	 vector<real_type> pi)
+HMM::HMM(ublas::matrix<real_type> transition,
+	 ublas::matrix<real_type> emission,
+	 ublas::vector<real_type> pi)
 {
   // sanity checks
   BOOST_ASSERT(pi.size()==emission.size1());
@@ -87,17 +87,17 @@ int HMM::get_nsymbols(void)
   return _nsymbols;
 }
 
-const matrix<real_type>& HMM::get_transition(void)
+const ublas::matrix<real_type>& HMM::get_transition(void)
 {
   return _transition;
 }
 
-const matrix<real_type>& HMM::get_emission(void)
+const ublas::matrix<real_type>& HMM::get_emission(void)
 {
   return _emission;
 }
 
-const vector<real_type>& HMM::get_pi(void)
+const ublas::vector<real_type>& HMM::get_pi(void)
 {
   return _pi;
 }
@@ -115,14 +115,14 @@ boost::tuple<sequence_type, // optimal path
   int T = obseq.size();
   sequence_type hiddenseq(T); // optimal path (sequence of hidden states that generated observed trace)
   real_type likelihood;
-  matrix<real_type> delta(T,_nstates);
-  matrix<int> phi(T,_nstates);
-  vector<real_type> tmp(_nstates);
+  ublas::matrix<real_type> delta(T,_nstates);
+  ublas::matrix<int> phi(T,_nstates);
+  ublas::vector<real_type> tmp(_nstates);
 
   // logarithms, so we don't suffer underflow!
-  matrix<real_type> logtransition = mlog(_transition);
-  matrix<real_type> logemission = mlog(_emission);
-  vector<real_type> logpi = vlog(_pi);
+  ublas::matrix<real_type> logtransition = mlog(_transition);
+  ublas::matrix<real_type> logemission = mlog(_emission);
+  ublas::vector<real_type> logpi = vlog(_pi);
 
   // compute stuff for time = 0
   BOOST_ASSERT(isSymbol(obseq[0]));
@@ -166,24 +166,24 @@ boost::tuple<sequence_type, // optimal path
   return boost::make_tuple(hiddenseq,likelihood);
 }
 
-boost::tuple<matrix<real_type>, // alpha-hat
-	     matrix<real_type>, // beta-hat
-	     matrix<real_type>, // gamma-hat
+boost::tuple<ublas::matrix<real_type>, // alpha-hat
+	     ublas::matrix<real_type>, // beta-hat
+	     ublas::matrix<real_type>, // gamma-hat
 	     boost::multi_array<real_type,3>, // epsilon-hat
 	     real_type // likelihood
 	     > HMM::forward_backward(const sequence_type &obseq)
 {
   // veriables
   unsigned int T = obseq.size();
-  vector<real_type> scalers(T); // these things will prevent underflow, etc.
-  matrix<real_type> alpha(T,_nstates);
-  matrix<real_type> alphatilde(T,_nstates);
-  matrix<real_type> alphahat(T,_nstates);
-  matrix<real_type> beta(T,_nstates);
-  matrix<real_type> betatilde(T,_nstates);
-  matrix<real_type> betahat(T,_nstates);
-  matrix<real_type> gammahat(T,_nstates);
-  vector<real_type> tmp(_nstates);
+  ublas::vector<real_type> scalers(T); // these things will prevent underflow, etc.
+  ublas::matrix<real_type> alpha(T,_nstates);
+  ublas::matrix<real_type> alphatilde(T,_nstates);
+  ublas::matrix<real_type> alphahat(T,_nstates);
+  ublas::matrix<real_type> beta(T,_nstates);
+  ublas::matrix<real_type> betatilde(T,_nstates);
+  ublas::matrix<real_type> betahat(T,_nstates);
+  ublas::matrix<real_type> gammahat(T,_nstates);
+  ublas::vector<real_type> tmp(_nstates);
   boost::multi_array<real_type,3> epsilonhat(boost::extents[T-1][_nstates][_nstates]);
   real_type likelihood;
 
@@ -211,7 +211,7 @@ boost::tuple<matrix<real_type>, // alpha-hat
     {
       if (time == T-1)
 	{
-	  row(betatilde,time) = scalar_vector<real_type>(_nstates,1);
+	  row(betatilde,time) = ublas::scalar_vector<real_type>(_nstates,1);
 	}
       else
 	{
@@ -256,19 +256,19 @@ boost::tuple<HMM, // the learned model
 
   // variables
   real_type likelihood;
-  matrix<real_type> A(_nstates,_nstates); // transition matrix for learned model
-  matrix<real_type> B(_nstates,_nsymbols); // emission matrix for learned model
-  vector<real_type> pi(_nstates); // initial distribution for learned model
+  ublas::matrix<real_type> A(_nstates,_nstates); // transition matrix for learned model
+  ublas::matrix<real_type> B(_nstates,_nsymbols); // emission matrix for learned model
+  ublas::vector<real_type> pi(_nstates); // initial distribution for learned model
   boost::multi_array<real_type,3> u(boost::extents[obseqs.size()][_nstates][_nstates]);
   boost::multi_array<real_type,3> w(boost::extents[obseqs.size()][_nstates][_nsymbols]);
-  matrix<real_type> v(obseqs.size(),_nstates);
-  matrix<real_type> x(obseqs.size(),_nstates);
+  ublas::matrix<real_type> v(obseqs.size(),_nstates);
+  ublas::matrix<real_type> x(obseqs.size(),_nstates);
   int k,i,j,time;
 
   // initializations
-  pi = zero_vector<real_type>(_nstates);
-  v = zero_matrix<real_type>(obseqs.size(),_nstates);
-  x = zero_matrix<real_type>(obseqs.size(),_nstates);
+  pi = ublas::zero_vector<real_type>(_nstates);
+  v = ublas::zero_matrix<real_type>(obseqs.size(),_nstates);
+  x = ublas::zero_matrix<real_type>(obseqs.size(),_nstates);
   std::fill(u.data(),u.data()+u.num_elements(),0);
   std::fill(w.data(),w.data()+w.num_elements(),0);
 
@@ -279,15 +279,15 @@ boost::tuple<HMM, // the learned model
       int T = obseqs[k].size();
 
       // run Forward-Backward
-      boost::tuple<matrix<real_type>, // alpha-hat
-		   matrix<real_type>, // beta-hat
-		   matrix<real_type>, // gamma-hat
+      boost::tuple<ublas::matrix<real_type>, // alpha-hat
+		   ublas::matrix<real_type>, // beta-hat
+		   ublas::matrix<real_type>, // gamma-hat
 		   boost::multi_array<real_type,3>, // epsilon-hat
 		   real_type // likelihood
 		   >  fb = forward_backward(obseqs[k]);
-      matrix<real_type> alphahat = boost::get<0>(fb);
-      matrix<real_type> betahat = boost::get<1>(fb);
-      matrix<real_type> gammahat = boost::get<2>(fb);
+      ublas::matrix<real_type> alphahat = boost::get<0>(fb);
+      ublas::matrix<real_type> betahat = boost::get<1>(fb);
+      ublas::matrix<real_type> gammahat = boost::get<2>(fb);
       boost::multi_array<real_type,3> epsilonhat = boost::get<3>(fb);
 
       // update likelihood
@@ -413,7 +413,7 @@ std::ostream &operator<<(std::ostream &cout, HMM &hmm)
   return cout;
 }
 
-matrix<real_type> load_hmm_matrix(const char *filename)
+ublas::matrix<real_type> load_hmm_matrix(const char *filename)
 {
   // XXX check that filename exists
 
@@ -449,7 +449,7 @@ matrix<real_type> load_hmm_matrix(const char *filename)
 	}
     }
 
-  matrix<real_type> X(n,m);
+  ublas::matrix<real_type> X(n,m);
   for (int i = 0; i < n; i++)
     {
       for (int j = 0; j < m; j++)
@@ -462,7 +462,7 @@ matrix<real_type> load_hmm_matrix(const char *filename)
   return X;
 }
 
-vector<real_type> load_hmm_vector(const char *filename)
+ublas::vector<real_type> load_hmm_vector(const char *filename)
 {
   // XXX check that filename exists
 
