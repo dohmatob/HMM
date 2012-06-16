@@ -16,12 +16,12 @@ $ make
 1. RUN
 ======
 Simply type:
-$ ./HMM
+$ ./bin/HMM
 
 
 2. DEPENDENCIES
 ===============
 - Boost c++ libraries (get from boost.org site)
-- cmake tool set
+- CMake tool set
 
 GOOD LUCK!
