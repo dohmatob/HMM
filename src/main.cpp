@@ -6,6 +6,8 @@
 #include <ctype.h> //__toascii
 #include <stdio.h> // printf
 
+using namespace HiddenMarkovModels;
+
 int main(void)
 {
   // XXX refactor main into unittest cases
