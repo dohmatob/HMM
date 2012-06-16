@@ -1,7 +1,7 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
 // HMM.cpp: principal implementation file
 
-#include "HMM.h" // pull-in stuff (classes, functions, etc.) to implement
+#include "HMM.h" // pull-in stuff (namespaces, classes, functions, etc.) to implement
 
 std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s)
 {
@@ -117,7 +117,6 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
   HiddenMarkovModels::real_type likelihood;
   ublas::matrix<HiddenMarkovModels::real_type> delta(T,_nstates);
   ublas::matrix<int> phi(T,_nstates);
-  ublas::vector<HiddenMarkovModels::real_type> tmp(_nstates);
 
   // logarithms, so we don't suffer underflow!
   ublas::matrix<HiddenMarkovModels::real_type> logtransition = HiddenMarkovModels::mlog(_transition);
@@ -137,7 +136,7 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
     {
       for (int j = 0; j < _nstates; j++)
 	{
-	  tmp = row(delta,time-1)+column(logtransition,j);
+	  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta,time-1)+column(logtransition,j);
 	  boost::tuple<int,
 		       HiddenMarkovModels::real_type
 		       > x = HiddenMarkovModels::argmax(tmp);
@@ -148,7 +147,7 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
     }
 
   // set last node on optimal path
-  tmp = row(delta,T-1);
+  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta,T-1);
   boost::tuple<int,
 	       HiddenMarkovModels::real_type
 	       > x = HiddenMarkovModels::argmax(tmp);
@@ -176,12 +175,10 @@ boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
   // veriables
   unsigned int T = obseq.size();
   ublas::vector<HiddenMarkovModels::real_type> scalers(T); // these things will prevent underflow, etc.
-  ublas::matrix<HiddenMarkovModels::real_type> alpha(T,_nstates);
   ublas::matrix<HiddenMarkovModels::real_type> alphatilde(T,_nstates);
-  ublas::matrix<HiddenMarkovModels::real_type> alphahat(T,_nstates);
-  ublas::matrix<HiddenMarkovModels::real_type> beta(T,_nstates);
-  ublas::matrix<HiddenMarkovModels::real_type> betatilde(T,_nstates);
-  ublas::matrix<HiddenMarkovModels::real_type> betahat(T,_nstates);
+  ublas::matrix<HiddenMarkovModels::real_type> alphahat(T,_nstates); // forward variables
+  ublas::matrix<HiddenMarkovModels::real_type> betatilde(T,_nstates); 
+  ublas::matrix<HiddenMarkovModels::real_type> betahat(T,_nstates); // backward variables
   ublas::matrix<HiddenMarkovModels::real_type> gammahat(T,_nstates);
   ublas::vector<HiddenMarkovModels::real_type> tmp(_nstates);
   boost::multi_array<HiddenMarkovModels::real_type,3> epsilonhat(boost::extents[T-1][_nstates][_nstates]);
@@ -449,6 +446,7 @@ ublas::matrix<HiddenMarkovModels::real_type> HiddenMarkovModels::load_hmm_matrix
 	}
     }
 
+  // pack the std array into a ublas matrix
   ublas::matrix<HiddenMarkovModels::real_type> X(n,m);
   for (int i = 0; i < n; i++)
     {
@@ -473,7 +471,7 @@ std::vector<HiddenMarkovModels::sequence_type> HiddenMarkovModels::load_hmm_obse
 {
   // XXX check that filename exists
 
-  std::vector<HiddenMarkovModels::sequence_type> sequences;
+  std::vector<HiddenMarkovModels::sequence_type> obseqs;
   std::ifstream input(filename);
   std::string lineData;
   int wordcount = 0;
@@ -490,10 +488,18 @@ std::vector<HiddenMarkovModels::sequence_type> HiddenMarkovModels::load_hmm_obse
       if (row.size() > 0)
 	{
 	  wordcount++;
-	  sequences.push_back(row);
+	  obseqs.push_back(row);
 	}
     }
 
-  return sequences;
+  return obseqs;
 }
 
+  
+      
+      
+      
+	
+
+      
+    
