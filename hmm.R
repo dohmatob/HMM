@@ -52,6 +52,36 @@ generatebatch <- function(observables, transition, emission, pi,
     return (seqs)
   }
 
+candidates <- function(O,S,observation, transition, emission, pi)
+  {
+    n <- length(S)
+    T <- length(observation)
+    v <- viterbi(O,S,observation,transition,emission,pi)
+    N <- n**T
+    grid <- as.matrix(expand.grid(rep(list(1:n),T)))
+    for (i in 1:n**T)
+      {
+        seq <- grid[i,]
+        p <- 1
+        for (t in 1:T)
+          {
+            if (t==1)
+              {
+                p <- p*pi[seq[t]]
+              }
+            else
+              {
+                p <- p*transition[seq[t-1],seq[t]]
+              }
+            p <- p*emission[seq[t],which(O==observation[t])]
+          }
+        if (p > 0)
+          {
+            print(S[seq])
+          }
+      }
+  }
+                          
 ##########################
 # THE VITERBI ALGORITHM
 ##########################
@@ -60,7 +90,7 @@ viterbi <- function(observables, # states that can be observed
                     observation, transition, emission,
                     pi=NULL # initial distribution 
                     )
-{
+  {
   ## --[ some corrections ]--
   n <- length(hidden) # number of (hidden/internal) states
   T <- length(observation) 
@@ -94,7 +124,8 @@ viterbi <- function(observables, # states that can be observed
     }
 
   ## --[ calculate probability of MAP (Maximum A Posteri) path ]--
-  probability <- 2**max(delta[T,])
+  loglikelihood <- max(delta[T,])
+  probability <- 2**loglikelihood
 
   ## --[ gather-up results ]--
   state <- hidden[which.max(delta[T,])]
@@ -107,7 +138,7 @@ viterbi <- function(observables, # states that can be observed
       t <- t-1
 }
   
-  return (list(path=path,probability=probability))
+  return (list(path=path,loglikelihood=loglikelihood,probability=probability))
 }
 
 ##############################################

@@ -1,25 +1,9 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
 
-#include <boost/numeric/ublas/matrix.hpp> 
-#include <boost/numeric/ublas/matrix_proxy.hpp> // matrix row, matrix colum, etc.
-#include <boost/numeric/ublas/io.hpp> // display matrix, etc.
-#include <boost/multi_array.hpp> // for multi-dimensional arrays (aka tensors), etc.
-#include <boost/assign/std/vector.hpp> // operator+=() for vectors, etc.
-#include <boost/assert.hpp> 
-#include <boost/tuple/tuple.hpp> // so I can return multiple values from functions (like in python)
-#include <math.h> // log, abs, etc.
-#include <iostream> // cout, etc.
-#include <fstream> // file handling functions like getline, etc.
-#include <sstream>
+#include "HMM.h"
 #include <algorithm> // random_shuffle, etc.
 #include <ctype.h> //__toascii
 #include <stdio.h> // printf
-
-using namespace boost::numeric::ublas;
-using namespace boost::assign;
-
-typedef double real_type;
-typedef std::vector<unsigned int> sequence_type;
 
 std::ostream &operator<<(std::ostream &cout, sequence_type s)
 {
@@ -37,7 +21,7 @@ std::ostream &operator<<(std::ostream &cout, sequence_type s)
 vector<real_type> vlog(const vector<real_type> &u)
 {
   vector<real_type> v(u.size());
-  
+
   for (int i = 0; i < u.size(); i++)
     {
       v(i) = std::log(u(i));
@@ -49,7 +33,7 @@ vector<real_type> vlog(const vector<real_type> &u)
 matrix<real_type> mlog(const matrix<real_type> &A)
 {
   matrix<real_type> B(A.size1(),A.size2());
-  
+
   for (int i = 0; i < A.size1(); i++)
     {
       row(B,i) = vlog(row(A,i));
@@ -76,7 +60,7 @@ boost::tuple<int,
 
   return boost::make_tuple(index,value);
 }
-  
+
 class HMM
 {
 private:
@@ -87,8 +71,8 @@ private:
   vector<real_type> _pi;
 
 public:
-  HMM(matrix<real_type> transition, 
-      matrix<real_type> emission, 
+  HMM(matrix<real_type> transition,
+      matrix<real_type> emission,
       vector<real_type> pi);
 
   int get_nstates(void);
@@ -110,10 +94,10 @@ public:
   boost::tuple<matrix<real_type>, // alpha-hat
 	       matrix<real_type>, // beta-hat
 	       matrix<real_type>, // gamma-hat
-	       boost::multi_array<real_type,3>, // epsilon-hat 
+	       boost::multi_array<real_type,3>, // epsilon-hat
 	       real_type // likelihood
 	       > forward_backward(const sequence_type &obseq);
-  
+
   boost::tuple<HMM, // the learned model
 	       real_type // the likelihood of the sequences of observations, under this new model
 	       > learn(const std::vector<sequence_type> &obseqs);
@@ -121,13 +105,13 @@ public:
   boost::tuple<HMM, // the learned model
 	       real_type // the likelihood of the sequences of observations, under this new model
 	       > baum_welch(const std::vector<sequence_type> &obseqs, //
-			    real_type tolerance=1e-9, // tolerance level for convergence 
+			    real_type tolerance=1e-9, // tolerance level for convergence
 			    unsigned int maxiter=200 // maximum number of iterations
 			    );
 };
 
-HMM::HMM(matrix<real_type> transition, 
-	 matrix<real_type> emission, 
+HMM::HMM(matrix<real_type> transition,
+	 matrix<real_type> emission,
 	 vector<real_type> pi)
 {
   // sanity checks
@@ -179,13 +163,13 @@ boost::tuple<sequence_type, // optimal path
 	     > HMM::viterbi(const sequence_type &obseq)
 {
   // variables
-  int T = obseq.size(); 
+  int T = obseq.size();
   sequence_type hiddenseq(T); // optimal path (sequence of hidden states that generated observed trace)
   real_type likelihood;
   matrix<real_type> delta(T,_nstates);
   matrix<int> phi(T,_nstates);
   vector<real_type> tmp(_nstates);
-  
+
   // logarithms, so we don't suffer underflow!
   matrix<real_type> logtransition = mlog(_transition);
   matrix<real_type> logemission = mlog(_emission);
@@ -198,7 +182,7 @@ boost::tuple<sequence_type, // optimal path
     {
       phi(0,j) = j;
     }
-  
+
   // run viterbi proper
   for (int time = 1; time < T; time++)
     {
@@ -213,7 +197,7 @@ boost::tuple<sequence_type, // optimal path
 	  phi(time,j) = boost::get<0>(x);
 	}
     }
-  
+
   // set last node on optimal path
   tmp = row(delta,T-1);
   boost::tuple<int,
@@ -222,21 +206,21 @@ boost::tuple<sequence_type, // optimal path
   likelihood = boost::get<1>(x);
   int state = boost::get<0>(x);
   hiddenseq[T-1] = state;
-  
+
   // backtrack
   for (int time = T-2; time >= 0; time--)
     {
       state = phi(time+1,state);
       hiddenseq[time] = state;
     }
-  
+
   return boost::make_tuple(hiddenseq,likelihood);
 }
 
 boost::tuple<matrix<real_type>, // alpha-hat
 	     matrix<real_type>, // beta-hat
 	     matrix<real_type>, // gamma-hat
-	     boost::multi_array<real_type,3>, // epsilon-hat 
+	     boost::multi_array<real_type,3>, // epsilon-hat
 	     real_type // likelihood
 	     > HMM::forward_backward(const sequence_type &obseq)
 {
@@ -254,7 +238,7 @@ boost::tuple<matrix<real_type>, // alpha-hat
   boost::multi_array<real_type,3> epsilonhat(boost::extents[T-1][_nstates][_nstates]);
   real_type likelihood;
 
-  // compute forward (alpha) variables 
+  // compute forward (alpha) variables
   for (int time = 0; time < T; time++)
     {
       BOOST_ASSERT(isSymbol(obseq[time]));
@@ -321,7 +305,7 @@ boost::tuple<HMM, // the learned model
   typedef floats3D::index_range range;
   floats3D::index_gen indices;
 
-  // variables 
+  // variables
   real_type likelihood;
   matrix<real_type> A(_nstates,_nstates); // transition matrix for learned model
   matrix<real_type> B(_nstates,_nsymbols); // emission matrix for learned model
@@ -338,18 +322,18 @@ boost::tuple<HMM, // the learned model
   x = zero_matrix<real_type>(obseqs.size(),_nstates);
   std::fill(u.data(),u.data()+u.num_elements(),0);
   std::fill(w.data(),w.data()+w.num_elements(),0);
-  
+
   // process all observations (assumed to be independent!)
   for (k = 0; k < obseqs.size(); k++)
     {
       // length of observation
       int T = obseqs[k].size();
 
-      // run Forward-Backward 
+      // run Forward-Backward
       boost::tuple<matrix<real_type>, // alpha-hat
 		   matrix<real_type>, // beta-hat
 		   matrix<real_type>, // gamma-hat
-		   boost::multi_array<real_type,3>, // epsilon-hat 
+		   boost::multi_array<real_type,3>, // epsilon-hat
 		   real_type // likelihood
 		   >  fb = forward_backward(obseqs[k]);
       matrix<real_type> alphahat = boost::get<0>(fb);
@@ -359,7 +343,7 @@ boost::tuple<HMM, // the learned model
 
       // update likelihood
       likelihood += boost::get<4>(fb);
-      
+
       // calculate auxiliary tensors
       for (i = 0; i < _nstates; i++)
 	{
@@ -369,7 +353,7 @@ boost::tuple<HMM, // the learned model
 	      x(k,i) += gammahat(time,i);
 	      if (time < T-1)
 		{
-		  v(k,i) += gammahat(time,i);		  
+		  v(k,i) += gammahat(time,i);
 		  for (j = 0; j < _nstates; j++)
 		    {
 		      u[k][i][j] += epsilonhat[time][i][j];
@@ -388,8 +372,8 @@ boost::tuple<HMM, // the learned model
 		}
 	    }
 	}
-    }	 
-  
+    }
+
   // compute learned model parameters
   pi /= obseqs.size(); // normalization
   for (i = 0; i < _nstates; i++)
@@ -407,14 +391,14 @@ boost::tuple<HMM, // the learned model
 	  B(i,j) = std::accumulate(view1Dv.begin(),view1Dv.end(),0.0)/total2;
 	}
     }
-	  
+
   return boost::make_tuple(HMM(A,B,pi),likelihood);
 }
 
 boost::tuple<HMM, // the learned model
 	     real_type // the likelihood of the sequences of observations, under this new model
-	     > HMM::baum_welch(const std::vector<sequence_type> &obseqs, 
-			       real_type tolerance, 
+	     > HMM::baum_welch(const std::vector<sequence_type> &obseqs,
+			       real_type tolerance,
 			       unsigned int maxiter
 			       )
 {
@@ -432,12 +416,12 @@ boost::tuple<HMM, // the learned model
 	  std::cout << "OUT OF COMPUTATION BUDGET" << std::endl;
 	  break;
 	}
-      
+
       std::cout << "iteration: " << iteration << std::endl;
       iteration++;
 
       // learn
-      boost::tuple<HMM, 
+      boost::tuple<HMM,
 		   real_type
 		   > learned = learn(obseqs);
       std::cout << "likelihood = " << boost::get<1>(learned) << std::endl;
@@ -458,11 +442,11 @@ boost::tuple<HMM, // the learned model
 
       // update likehood
       likelihood = boost::get<1>(learned);
-	 
+
       // converged ?
       if (relative_gain < tolerance)
 	{
-	  
+
 	  std::cout << "CONVERGED." << std::endl;
 	  break;
 	}
@@ -495,10 +479,10 @@ matrix<real_type> load_hmm_matrix(const char *filename)
       real_type d;
       std::vector<real_type> row;
       std::stringstream lineStream(lineData);
-      
+
       while (lineStream >> d)
 	row.push_back(d);
-      
+
       if (n == 0)
 	{
 	  m = row.size();
@@ -515,7 +499,7 @@ matrix<real_type> load_hmm_matrix(const char *filename)
 	  n++;
 	}
     }
-  
+
   matrix<real_type> X(n,m);
   for (int i = 0; i < n; i++)
     {
@@ -550,17 +534,17 @@ std::vector<sequence_type> load_hmm_observations(const char *filename)
       int d;
       sequence_type row;
       std::stringstream lineStream(lineData);
-      
+
       while (lineStream >> d)
 	row.push_back(d);
-      
+
       if (row.size() > 0)
 	{
 	  wordcount++;
 	  sequences.push_back(row);
 	}
     }
- 
+
   return sequences;
 }
 
@@ -571,8 +555,8 @@ int main(void)
   matrix<real_type> trans = load_hmm_matrix("corpus_transition.dat");
   matrix<real_type> em = load_hmm_matrix("corpus_emission.dat");
   vector<real_type> pi = load_hmm_vector("corpus_pi.dat");
-  std::cout << "Done.\n" << std::endl;  
-  
+  std::cout << "Done.\n" << std::endl;
+
   // initialize HMM object
   HMM hmm(trans,em,pi);
   std::cout << "HMM:\n" << hmm;
@@ -586,8 +570,8 @@ int main(void)
   // draw a random sample
   int nlessons = 1000;
   std::cout << "Sampling " << nlessons << " words from corpus .." << std::endl;
-  std::random_shuffle(corpus.begin(), corpus.end()); 
-  std::vector<sequence_type> lessons = std::vector<sequence_type>(corpus.begin(),corpus.begin()+nlessons%corpus.size()); 
+  std::random_shuffle(corpus.begin(), corpus.end());
+  std::vector<sequence_type> lessons = std::vector<sequence_type>(corpus.begin(),corpus.begin()+nlessons%corpus.size());
   std::cout << "Done.\n" << std::endl;
 
   boost::tuple<sequence_type,
@@ -596,9 +580,9 @@ int main(void)
 
   std::cout << "The a posteriori most probable sequence of hidden states that generated the trace " << lessons[2] << " is " << boost::get<0>(path) << "." << std::endl;
   std::cout << "Its (log) likelihood is " << boost::get<1>(path) << ".\n" << std::endl;
-    
+
   // Bauw-Welch
-  hmm.baum_welch(lessons);  
+  hmm.baum_welch(lessons);
   std::cout << "\nFinal HMM:\n" << hmm;
 
   std::cout << "Viterbi classification of the 26 symbols (cf. letters of the english alphabet):" << std::endl;
@@ -612,17 +596,17 @@ int main(void)
 		   > path = hmm.viterbi(symbol);
 
       unsigned int which = boost::get<0>(path)[0]; // vowel or consonant ?
-      
+
       // let's call a's cluster "vowel" and call the other cluster "consonant"
       if (j == 0)
 	{
 	  correction = which;
 	}
       which = correction ? 1 - which : which;
-      
+
       printf("\t%c is a %s\n", __toascii('A')+j,which?"consonant":"vowel");
       // std::cout << "\t" << j << " is in class " << boost::get<0>(path)[0] << std::endl;
     }
-      
+
   return 0;
 }
