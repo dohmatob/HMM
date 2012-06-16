@@ -1,9 +1,7 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
+// HMM.cpp: principal implementation file
 
-#include "HMM.h"
-#include <algorithm> // random_shuffle, etc.
-#include <ctype.h> //__toascii
-#include <stdio.h> // printf
+#include "HMM.h" // pull-in stuff (classes, functions, etc.) to implement
 
 std::ostream &operator<<(std::ostream &cout, sequence_type s)
 {
@@ -60,55 +58,6 @@ boost::tuple<int,
 
   return boost::make_tuple(index,value);
 }
-
-class HMM
-{
-private:
-  int _nstates;
-  int _nsymbols;
-  matrix<real_type> _transition;
-  matrix<real_type> _emission;
-  vector<real_type> _pi;
-
-public:
-  HMM(matrix<real_type> transition,
-      matrix<real_type> emission,
-      vector<real_type> pi);
-
-  int get_nstates(void);
-
-  int get_nsymbols(void);
-
-  const matrix<real_type> &get_transition(void);
-
-  const matrix<real_type> &get_emission(void);
-
-  const vector<real_type> &get_pi(void);
-
-  bool isSymbol(unsigned int i);
-
-  boost::tuple<sequence_type, // optimal path
-	       real_type // likelihood of path
-	       > viterbi(const sequence_type &obseq);
-
-  boost::tuple<matrix<real_type>, // alpha-hat
-	       matrix<real_type>, // beta-hat
-	       matrix<real_type>, // gamma-hat
-	       boost::multi_array<real_type,3>, // epsilon-hat
-	       real_type // likelihood
-	       > forward_backward(const sequence_type &obseq);
-
-  boost::tuple<HMM, // the learned model
-	       real_type // the likelihood of the sequences of observations, under this new model
-	       > learn(const std::vector<sequence_type> &obseqs);
-
-  boost::tuple<HMM, // the learned model
-	       real_type // the likelihood of the sequences of observations, under this new model
-	       > baum_welch(const std::vector<sequence_type> &obseqs, //
-			    real_type tolerance=1e-9, // tolerance level for convergence
-			    unsigned int maxiter=200 // maximum number of iterations
-			    );
-};
 
 HMM::HMM(matrix<real_type> transition,
 	 matrix<real_type> emission,
@@ -548,65 +497,3 @@ std::vector<sequence_type> load_hmm_observations(const char *filename)
   return sequences;
 }
 
-int main(void)
-{
-  // XXX refactor main into unittest cases
-  std::cout << "Loadin: HMM parameters from files .." << std::endl;
-  matrix<real_type> trans = load_hmm_matrix("corpus_transition.dat");
-  matrix<real_type> em = load_hmm_matrix("corpus_emission.dat");
-  vector<real_type> pi = load_hmm_vector("corpus_pi.dat");
-  std::cout << "Done.\n" << std::endl;
-
-  // initialize HMM object
-  HMM hmm(trans,em,pi);
-  std::cout << "HMM:\n" << hmm;
-
-  // prepare data
-  std::cout << "Loadin: english words from corpus file .." << std::endl;
-  std::vector<sequence_type> corpus = load_hmm_observations("corpus_words.dat"); // load
-  std::cout << "Done (loaded " << corpus.size() << " words).\n" << std::endl;
-
-
-  // draw a random sample
-  int nlessons = 1000;
-  std::cout << "Sampling " << nlessons << " words from corpus .." << std::endl;
-  std::random_shuffle(corpus.begin(), corpus.end());
-  std::vector<sequence_type> lessons = std::vector<sequence_type>(corpus.begin(),corpus.begin()+nlessons%corpus.size());
-  std::cout << "Done.\n" << std::endl;
-
-  boost::tuple<sequence_type,
-	       real_type
-	       > path = hmm.viterbi(lessons[2]);
-
-  std::cout << "The a posteriori most probable sequence of hidden states that generated the trace " << lessons[2] << " is " << boost::get<0>(path) << "." << std::endl;
-  std::cout << "Its (log) likelihood is " << boost::get<1>(path) << ".\n" << std::endl;
-
-  // Bauw-Welch
-  hmm.baum_welch(lessons);
-  std::cout << "\nFinal HMM:\n" << hmm;
-
-  std::cout << "Viterbi classification of the 26 symbols (cf. letters of the english alphabet):" << std::endl;
-  sequence_type symbol(1);
-  unsigned int correction;
-  for (int j = 0; j < 26; j++)
-    {
-      symbol[0] = j;
-      boost::tuple<sequence_type,
-		   real_type
-		   > path = hmm.viterbi(symbol);
-
-      unsigned int which = boost::get<0>(path)[0]; // vowel or consonant ?
-
-      // let's call a's cluster "vowel" and call the other cluster "consonant"
-      if (j == 0)
-	{
-	  correction = which;
-	}
-      which = correction ? 1 - which : which;
-
-      printf("\t%c is a %s\n", __toascii('A')+j,which?"consonant":"vowel");
-      // std::cout << "\t" << j << " is in class " << boost::get<0>(path)[0] << std::endl;
-    }
-
-  return 0;
-}
