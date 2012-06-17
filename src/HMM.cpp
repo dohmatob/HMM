@@ -494,12 +494,3 @@ std::vector<HiddenMarkovModels::sequence_type> HiddenMarkovModels::load_hmm_obse
 
   return obseqs;
 }
-
-  
-      
-      
-      
-	
-
-      
-    
