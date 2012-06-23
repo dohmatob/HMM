@@ -1,6 +1,9 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
 // HMM.h: principal header file
 
+#ifndef HMM_H
+#define HMM_H
+
 // Boost 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp> // extract matrix row, matrix column, etc.
@@ -104,3 +107,5 @@ namespace HiddenMarkovModels
   // function to load a sequence of observations from a file
   std::vector<sequence_type> load_hmm_observations(const char *filename);
 }
+
+#endif // HMM_H

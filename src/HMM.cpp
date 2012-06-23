@@ -172,7 +172,7 @@ boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
 	     HiddenMarkovModels::real_type // likelihood
 	     > HiddenMarkovModels::HMM::forward_backward(const HiddenMarkovModels::sequence_type &obseq)
 {
-  // veriables
+  // variables
   unsigned int T = obseq.size();
   ublas::vector<HiddenMarkovModels::real_type> scalers(T); // these things will prevent underflow, etc.
   ublas::matrix<HiddenMarkovModels::real_type> alphatilde(T,_nstates);
