@@ -72,7 +72,7 @@ namespace HiddenMarkovModels
     boost::tuple<ublas::matrix<real_type>, // alpha-hat
       ublas::matrix<real_type>, // beta-hat
       ublas::matrix<real_type>, // gamma-hat
-      boost::multi_array<real_type,3>, // epsilon-hat
+      boost::multi_array<real_type, 3>, // epsilon-hat
       real_type // likelihood
       > forward_backward(const sequence_type &obseq);
     
@@ -86,7 +86,7 @@ namespace HiddenMarkovModels
       real_type // the likelihood of the sequences of observations, under this new model
       > baum_welch(const std::vector<sequence_type> &obseqs, //
 		   real_type tolerance=1e-9, // tolerance level for convergence
-			    unsigned int maxiter=200 // maximum number of iterations
+		   unsigned int maxiter=200 // maximum number of iterations
 		   );
   }; // HMM
   

@@ -1,7 +1,7 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
 // main.cpp: main source file
 
-#include "HMM.h"
+#include "HMM.hpp"
 #include <algorithm> // random_shuffle, etc.
 #include <ctype.h> //__toascii
 #include <stdio.h> // printf
@@ -18,7 +18,7 @@ int main(void)
   std::cout << "Done.\n" << std::endl;
 
   // initialize HMM object
-  HMM hmm(trans,em,pi);
+  HMM hmm(trans, em, pi);
   std::cout << "HMM:\n" << hmm;
 
   // prepare data
@@ -31,7 +31,7 @@ int main(void)
   int nlessons = 1000;
   std::cout << "Sampling " << nlessons << " words from corpus .." << std::endl;
   std::random_shuffle(corpus.begin(), corpus.end());
-  std::vector<sequence_type> lessons = std::vector<sequence_type>(corpus.begin(),corpus.begin()+nlessons%corpus.size());
+  std::vector<sequence_type> lessons = std::vector<sequence_type>(corpus.begin(), corpus.begin()+nlessons%corpus.size());
   std::cout << "Done.\n" << std::endl;
 
   boost::tuple<sequence_type,
@@ -64,7 +64,7 @@ int main(void)
 	}
       which = correction ? 1 - which : which;
 
-      printf("\t%c is a %s\n", __toascii('A')+j,which?"consonant":"vowel");
+      printf("\t%c is a %s\n", __toascii('A')+j, which?"consonant":"vowel");
       // std::cout << "\t" << j << " is in class " << boost::get<0>(path)[0] << std::endl;
     }
 
