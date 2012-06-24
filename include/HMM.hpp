@@ -5,7 +5,7 @@
 #define HMM_H
 
 // Boost 
-#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix.hpp> // matrix algebra
 #include <boost/numeric/ublas/matrix_proxy.hpp> // extract matrix row, matrix column, etc.
 #include <boost/numeric/ublas/io.hpp> // display matrix, etc.
 #include <boost/multi_array.hpp> // for multi-dimensional arrays (aka tensors), etc.

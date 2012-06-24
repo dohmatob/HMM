@@ -391,24 +391,26 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
       boost::tuple<HiddenMarkovModels::HMM,
 		   HiddenMarkovModels::real_type
 		   > learned = learn(obseqs);
-      std::cout << "likelihood = " << boost::get<1>(learned) << std::endl;
+      HMM new_hmm = boost::get<0>(learned);
+      real_type new_likelihood = boost::get<1>(learned); 
+      std::cout << "likelihood = " << new_likelihood << std::endl;
 
       // converged ?
-      if (boost::get<1>(learned) == 0.0)
+      if (new_likelihood == 0.0)
 	{
 	  std::cout << "CONVERGED." << std::endl;
 	  break;
 	}
 
       // update this model
-      relative_gain = (boost::get<1>(learned) - likelihood)/abs(boost::get<1>(learned));
+      relative_gain = (new_likelihood - likelihood)/abs(new_likelihood);
       std::cout << "relative gain = " << relative_gain << std::endl;
-      _transition = boost::get<0>(learned).get_transition();
-      _emission = boost::get<0>(learned).get_emission();
-      _pi = boost::get<0>(learned).get_pi();
+      _transition = new_hmm.get_transition();
+      _emission = new_hmm.get_emission();
+      _pi = new_hmm.get_pi();
 
       // update likehood
-      likelihood = boost::get<1>(learned);
+      likelihood = new_likelihood;
 
       // converged ?
       if (relative_gain < tolerance)
