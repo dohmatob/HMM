@@ -8,7 +8,7 @@ std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s
   cout << "[" << s.size() << "](";
   for (int i = 0; i < s.size(); i++)
     {
-      cout << s[i] << (i < s.size() - 1 ? "," : "");
+      cout << s[i] << (i < s.size()-1 ? "," : "");
     }
 
   cout << ")";
@@ -18,6 +18,7 @@ std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s
 
 ublas::vector<HiddenMarkovModels::real_type> HiddenMarkovModels::vlog(const ublas::vector<HiddenMarkovModels::real_type> &u)
 {
+  // output vector
   ublas::vector<HiddenMarkovModels::real_type> v(u.size());
 
   for (int i = 0; i < u.size(); i++)
@@ -70,22 +71,26 @@ HiddenMarkovModels::HMM::HMM(ublas::matrix<HiddenMarkovModels::real_type> transi
   BOOST_ASSERT(transition.size2()==emission.size1());
 
   // sanity checks for stochasticity of parameter matrices
-  BOOST_ASSERT(sum(pi) == 1.0);
-  for (int i = 0; i < _nhidden; i++)
+  BOOST_ASSERT(sum(pi) > 0); 
+  pi /= sum(pi); // normalization
+  for (int i = 0; i < transition.size1(); i++)
     {
-      BOOST_ASSERT(_pi[i] >= 0);
-      BOOST_ASSERT(sum(row(transition, i) == 1.0);
-      BOOST_ASSERT(sum(row(emission, i) == 1.0);
-      for (int j = 0; j < _nhidden; j++)
+      BOOST_ASSERT(pi[i] >= 0);
+      for (int j = 0; j < transition.size2(); j++)
 	{
 	  BOOST_ASSERT(transition(i, j) >= 0);
 	}      
-      for (int j = 0; j < nsysmbols; j++)
+      for (int j = 0; j < emission.size2(); j++)
 	{
 	  BOOST_ASSERT(emission(i, j) >= 0);
 	}
+      BOOST_ASSERT(sum(row(transition, i)) > 0); 
+      row(transition, i) /= sum(row(transition, i)); // normalization
+      BOOST_ASSERT(sum(row(emission, i)) > 0);
+      row(emission, i) /= sum(row(emission, i)); // normalization
     }
   
+  // set parameters of model
   _transition = transition;
   _emission = emission;
   _pi = pi;
@@ -152,18 +157,18 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
     {
       for (int j = 0; j < _nstates; j++)
 	{
-	  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta, time - 1) + column(logtransition, j);
+	  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta, time-1)+column(logtransition, j);
 	  boost::tuple<int,
 		       HiddenMarkovModels::real_type
 		       > x = HiddenMarkovModels::argmax(tmp);
 	  BOOST_ASSERT(isSymbol(obseq[time]));
-	  delta(time, j) = boost::get<1>(x) + logemission(j, obseq[time]);
+	  delta(time, j) = boost::get<1>(x)+logemission(j, obseq[time]);
 	  phi(time, j) = boost::get<0>(x);
 	}
     }
 
   // set last node on optimal path
-  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta, T - 1);
+  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta, T-1);
   boost::tuple<int,
 	       HiddenMarkovModels::real_type
 	       > x = HiddenMarkovModels::argmax(tmp);
@@ -174,7 +179,7 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
   // backtrack
   for (int time = T-2; time >= 0; time--)
     {
-      state = phi(time + 1, state);
+      state = phi(time+1, state);
       hiddenseq[time] = state;
     }
 
