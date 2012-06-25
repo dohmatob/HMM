@@ -1,7 +1,7 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
 // main.cpp: main source file
 
-#include "HMM.h"
+#include "HMM.hpp"
 #include <algorithm> // random_shuffle, etc.
 #include <ctype.h> //__toascii
 #include <stdio.h> // printf

@@ -1,7 +1,7 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
 // HMM.cpp: principal implementation file
 
-#include "HMM.h" // pull-in stuff (namespaces, classes, functions, etc.) to implement
+#include "HMM.hpp" // pull-in stuff (namespaces, classes, functions, etc.) to implement
 
 std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s)
 {
