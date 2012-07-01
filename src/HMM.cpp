@@ -3,6 +3,9 @@
 
 #include "HMM.hpp" // pull-in stuff (namespaces, classes, functions, etc.) to implement
 
+/** 
+ * so we can display sequences
+ **/
 std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s)
 {
   cout << "[" << s.size() << "](";
@@ -16,6 +19,9 @@ std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s
   return cout;
 }
 
+/**
+ * method to compute logarithm of vector
+ **/
 ublas::vector<HiddenMarkovModels::real_type> HiddenMarkovModels::vlog(const ublas::vector<HiddenMarkovModels::real_type> &u)
 {
   // output vector
@@ -206,6 +212,7 @@ boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
   HiddenMarkovModels::real_type likelihood;
 
   // compute forward (alpha) variables
+#pragma omp parallel for ordered
   for (int time = 0; time < T; time++)
     {
       BOOST_ASSERT(isSymbol(obseq[time]));
@@ -225,6 +232,7 @@ boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
     }
 
   // compute backward (beta) parameters
+#pragma omp parallel for ordered
   for (int time = T-1; time >= 0; time--)
     {
       if (time == T-1)
@@ -242,6 +250,7 @@ boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
     }
 
   // compute epsilon and gamma terms
+#pragma omp parallel for 
   for (int time = 0; time < T; time++)
     {
       row(gammahat, time) = element_prod(row(alphahat, time), row(betahat, time))/scalers[time];
@@ -281,8 +290,7 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
   boost::multi_array<HiddenMarkovModels::real_type, 3> w(boost::extents[obseqs.size()][_nstates][_nsymbols]);
   ublas::matrix<HiddenMarkovModels::real_type> v(obseqs.size(), _nstates);
   ublas::matrix<HiddenMarkovModels::real_type> x(obseqs.size(), _nstates);
-  int k, i, j, time;
-
+  
   // initializations
   pi = ublas::zero_vector<HiddenMarkovModels::real_type>(_nstates);
   v = ublas::zero_matrix<HiddenMarkovModels::real_type>(obseqs.size(), _nstates);
@@ -291,7 +299,8 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
   std::fill(w.data(), w.data()+w.num_elements(), 0);
 
   // process all observations (assumed to be independent!)
-  for (k = 0; k < obseqs.size(); k++)
+#pragma omp parallel for
+  for (int k = 0; k < obseqs.size(); k++)
     {
       // length of observation
       int T = obseqs[k].size();
@@ -309,31 +318,36 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
       boost::multi_array<HiddenMarkovModels::real_type, 3> epsilonhat = boost::get<3>(fb);
 
       // update likelihood
+#pragma omp critical
       likelihood += boost::get<4>(fb);
 
       // calculate auxiliary tensors
-      for (i = 0; i < _nstates; i++)
+      for (int i = 0; i < _nstates; i++)
 	{
+#pragma omp critical
 	  pi[i] += gammahat(0, i);
-	  for (time = 0; time < T; time++)
+	  for (int time = 0; time < T; time++)
 	    {
+#pragma omp critical
 	      x(k, i) += gammahat(time, i);
 	      if (time < T-1)
 		{
+#pragma omp critical
 		  v(k, i) += gammahat(time, i);
-		  for (j = 0; j < _nstates; j++)
+		  for (int j = 0; j < _nstates; j++)
 		    {
 		      u[k][i][j] += epsilonhat[time][i][j];
 		    }
 		}
 	    }
 
-	  for (j = 0; j < _nsymbols; j++)
+	  for (int j = 0; j < _nsymbols; j++)
 	    {
-	      for (time = 0; time < T; time++)
+	      for (int time = 0; time < T; time++)
 		{
 		  if (obseqs[k][time] == j)
 		    {
+#pragma omp critical
 		      w[k][i][j] += gammahat(time, i);
 		    }
 		}
@@ -343,16 +357,17 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
 
   // compute learned model parameters
   pi /= obseqs.size(); // normalization
-  for (i = 0; i < _nstates; i++)
+#pragma omp parallel for
+  for (int i = 0; i < _nstates; i++)
     {
       HiddenMarkovModels::real_type total1 = sum(column(v, i));
       HiddenMarkovModels::real_type total2 = sum(column(x, i));
-      for (j = 0; j < _nstates; j++)
+      for (int j = 0; j < _nstates; j++)
 	{
 	  floats3D::array_view<1>::type view1Du = u[indices[range()][i][j]];
 	  A(i, j) = std::accumulate(view1Du.begin(), view1Du.end(), 0.0)/total1;
 	}
-      for (j = 0; j < _nsymbols; j++)
+      for (int j = 0; j < _nsymbols; j++)
 	{
 	  floats3D::array_view<1>::type view1Dv = w[indices[range()][i][j]];
 	  B(i, j) = std::accumulate(view1Dv.begin(), view1Dv.end(), 0.0)/total2;
