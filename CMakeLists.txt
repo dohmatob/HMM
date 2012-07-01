@@ -7,6 +7,10 @@ set(HMM_VERSION_CURRENT "0")
 set(HMM_VERSION_REVISION "0")
 set(HMM_VERSION_AGE "2")
 
+set(BUILD_EXAMPLES_DEFAULT ON)
+option(BUILD_EXAMPLES "Build Examples target." 
+  ${BUILD_EXAMPLES_DEFAULT})
+
 if(UNIX AND NOT WIN32)
   message("
    
@@ -41,25 +45,39 @@ if(UNIX AND NOT WIN32)
     message("FATAL: Boost C++ libraries not found. Get Boost from boost.org or point BOOST_ROOT to your installation directory.")
   endif(Boost_FOUND)
 
+  # check OpenMP
+  find_package(OpenMP)
+  if (OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+  endif()
+
   # configure a header file to pass some of the CMake settings
   # to the source code
   configure_file (
     "${PROJECT_SOURCE_DIR}/include/HMM_config.h.in"
     "${PROJECT_BINARY_DIR}/HMM_config.h"
     )
-  
+
   # add the binary tree to the search path for include files
   include_directories("${PROJECT_SOURCE_DIR}/include") # our header files
   include_directories("${PROJECT_BINARY_DIR}") # so that we will find the generated config header
 
-  # generate source files
-  file(
-    GLOB_RECURSE
-    source_files
-    "${PROJECT_SOURCE_DIR}/src/*.cpp"
-    )
+  # add HMM library
+  add_library(HMM src/HMM.cpp)
 
-  add_executable(HMM ${source_files})
+  # # generate source files
+  # file(
+  #   GLOB_RECURSE
+  #   source_files
+  #   "${PROJECT_SOURCE_DIR}/src/*.cpp"
+  #   )
+
+  # add Examples target
+  if (BUILD_EXAMPLES)
+    add_subdirectory(Examples)
+  endif(BUILD_EXAMPLES)
   
 else (UNIX AND NOT WIN32)
   message("NOT FOR WIN32!")
