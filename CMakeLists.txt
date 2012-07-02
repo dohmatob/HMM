@@ -3,9 +3,13 @@ cmake_minimum_required (VERSION 2.8 FATAL_ERROR)
 project(HMM)
 set(EXECUTABLE_OUTPUT_PATH bin/${CMAKE_BUILD_TYPE})
 
+# version stuff
 set(HMM_VERSION_CURRENT "0")
 set(HMM_VERSION_REVISION "0")
 set(HMM_VERSION_AGE "2")
+
+# set bin
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 set(BUILD_EXAMPLES_DEFAULT ON)
 option(BUILD_EXAMPLES "Build Examples target." 
