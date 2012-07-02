@@ -22,7 +22,6 @@
 namespace ublas = boost::numeric::ublas; // namespace alias (saner than 'using ...')
 using namespace boost::assign; 
 
-
 namespace HiddenMarkovModels
 {
   /**

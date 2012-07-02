@@ -430,7 +430,6 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
       // converged ?
       if (relative_gain < tolerance)
 	{
-
 	  std::cout << "CONVERGED." << std::endl;
 	  break;
 	}
