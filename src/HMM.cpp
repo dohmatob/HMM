@@ -227,7 +227,7 @@ boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
 	      alphatilde(time, i) = sum(element_prod(row(alphahat, time-1), column(_transition,i))) * _emission(i, obseq[time]);
 	    }
 	}
-      scalers[time] = 1/sum(row(alphatilde, time)); // norm_1(.) equalates to sum(.)
+      scalers[time] = 1/sum(row(alphatilde, time)); 
       row(alphahat, time) = scalers[time]*row(alphatilde, time);
     }
 
