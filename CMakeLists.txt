@@ -11,9 +11,19 @@ set(HMM_VERSION_AGE "2")
 # set bin
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(BUILD_EXAMPLES_DEFAULT ON)
-option(BUILD_EXAMPLES "Build Examples target." 
-  ${BUILD_EXAMPLES_DEFAULT})
+# build Examples ?
+option(BUILD_EXAMPLES "Build HMM usage examples (see Examples subdirectory)" ON)
+
+# use OpenMP ?
+option(USE_OPENMP "Use OpenMP parallelization" ON)
+
+# build static or shared library type ?
+option(BUILD_HMM_SHARED "Build HMM as shared library" OFF)
+if(BUILD_HMM_SHARED)
+  set(HMM_LIBRARY_TYPE SHARED)
+else(BUILD_HMM_SHARED)
+  set(HMM_LIBRARY_TYPE STATIC)
+endif(BUILD_HMM_SHARED)
 
 if(UNIX AND NOT WIN32)
   message("
@@ -50,15 +60,16 @@ if(UNIX AND NOT WIN32)
   endif(Boost_FOUND)
 
   # check OpenMP
-  find_package(OpenMP)
-  if (OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-  endif()
+  if(USE_OPENMP)
+    find_package(OpenMP)
+    if (OPENMP_FOUND)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+    endif(OPENMP_FOUND)
+  endif(USE_OPENMP)
 
-  # configure a header file to pass some of the CMake settings
-  # to the source code
+  # configure a header file to pass some of the CMake settings to the source code
   configure_file (
     "${PROJECT_SOURCE_DIR}/include/HMM_config.h.in"
     "${PROJECT_BINARY_DIR}/HMM_config.h"
@@ -69,14 +80,12 @@ if(UNIX AND NOT WIN32)
   include_directories("${PROJECT_BINARY_DIR}") # so that we will find the generated config header
 
   # add HMM library
-  add_library(HMM src/HMM.cpp)
-
-  # # generate source files
-  # file(
-  #   GLOB_RECURSE
-  #   source_files
-  #   "${PROJECT_SOURCE_DIR}/src/*.cpp"
-  #   )
+  file(
+    GLOB_RECURSE
+    source_files
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+    )
+  add_library(HMM ${HMM_LIBRARY_TYPE} ${source_files})
 
   # add Examples target
   if (BUILD_EXAMPLES)
