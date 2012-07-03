@@ -18,7 +18,7 @@ option(BUILD_EXAMPLES "Build HMM usage examples (see Examples subdirectory)" ON)
 option(USE_OPENMP "Use OpenMP parallelization" ON)
 
 # build static or shared library type ?
-option(BUILD_HMM_SHARED "Build HMM as shared library" OFF)
+option(BUILD_HMM_SHARED "Build HMM as shared library" ON)
 if(BUILD_HMM_SHARED)
   set(HMM_LIBRARY_TYPE SHARED)
 else(BUILD_HMM_SHARED)
