@@ -1,5 +1,9 @@
-// (c) 2012 DOP (dohmatob elvis dopgima)
-// HMM.h: principal header file
+// $Id$
+/**
+   @file HMM.h
+   @author DOP (dohmatob elvis dopgima)
+   @brief principal header file
+ **/
 
 #ifndef HMM_H
 #define HMM_H
@@ -31,18 +35,24 @@ namespace HiddenMarkovModels
   typedef std::vector<unsigned int> sequence_type;
 
   /** 
-   * so we can display sequences
+      function to display sequences
    **/
-  std::ostream &operator<<(std::ostream &cout, sequence_type s);
+  std::ostream &operator<<(std::ostream &cout, sequence_type seq);
 
   /**
-   * method to compute logarithm of vector
-   **/
+     method to compute logarithm of vector
+
+     @param[in] u vector whose logarithm is to be computed
+     @return Logarithm of input vector
+  **/
   ublas::vector<real_type> vlog(const ublas::vector<real_type> &u);
- 
+  
   /** 
-   * method to compute logarithm of matrix
-   **/
+      method to compute logarithm of matrix
+      
+      @param[in] m matrix whose logarithm is to be computed
+      @return Logarithm of input matrix
+  **/
   ublas::matrix<real_type> mlog(const ublas::matrix<real_type> &A);
   
   class HMM

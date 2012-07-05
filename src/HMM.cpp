@@ -1,5 +1,5 @@
 // (c) 2012 DOP (dohmatob elvis dopgima)
-// HMM.cpp: principal implementation file
+// martian.cpp: usage example: a Martian who learnes english vowels and consonants from the Brown corpus
 
 #include "HMM.hpp" // pull-in stuff (namespaces, classes, functions, etc.) to implement
 
@@ -399,6 +399,7 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
 	  break;
 	}
 
+      std::cout << std::endl;
       std::cout << "iteration: " << iteration << std::endl;
       iteration++;
 
@@ -408,18 +409,19 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
 		   > learned = learn(obseqs);
       HMM new_hmm = boost::get<0>(learned);
       real_type new_likelihood = boost::get<1>(learned); 
-      std::cout << "likelihood = " << new_likelihood << std::endl;
+      std::cout << "\tlikelihood: " << new_likelihood << std::endl;
 
       // converged ?
       if (new_likelihood == 0.0)
 	{
-	  std::cout << "CONVERGED." << std::endl;
+	  std::cout << "\tCONVERGED." << std::endl;
 	  break;
 	}
 
       // update this model
       relative_gain = (new_likelihood - likelihood)/abs(new_likelihood);
-      std::cout << "relative gain = " << relative_gain << std::endl;
+      BOOST_ASSERT(relative_gain >= 0); // if this fails, then something is terribly wrong with the implementation!
+      std::cout << "\trelative gain: " << relative_gain << std::endl;
       _transition = new_hmm.get_transition();
       _emission = new_hmm.get_emission();
       _pi = new_hmm.get_pi();
@@ -430,7 +432,7 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
       // converged ?
       if (relative_gain < tolerance)
 	{
-	  std::cout << "CONVERGED." << std::endl;
+	  std::cout << "\tCONVERGED." << std::endl;
 	  break;
 	}
     }
