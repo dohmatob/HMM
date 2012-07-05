@@ -1,15 +1,11 @@
 cmake_minimum_required (VERSION 2.8 FATAL_ERROR)
 
 project(HMM)
-set(EXECUTABLE_OUTPUT_PATH bin/${CMAKE_BUILD_TYPE})
 
 # version stuff
 set(HMM_VERSION_CURRENT "0")
 set(HMM_VERSION_REVISION "0")
 set(HMM_VERSION_AGE "2")
-
-# set bin
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # build Examples ?
 option(BUILD_EXAMPLES "Build HMM usage examples (see Examples subdirectory)" ON)
@@ -17,36 +13,18 @@ option(BUILD_EXAMPLES "Build HMM usage examples (see Examples subdirectory)" ON)
 # use OpenMP ?
 option(USE_OPENMP "Use OpenMP parallelization" ON)
 
-# build static or shared library type ?
-option(BUILD_HMM_SHARED "Build HMM as shared library" ON)
-if(BUILD_HMM_SHARED)
-  set(HMM_LIBRARY_TYPE SHARED)
-else(BUILD_HMM_SHARED)
-  set(HMM_LIBRARY_TYPE STATIC)
-endif(BUILD_HMM_SHARED)
-
 if(UNIX AND NOT WIN32)
-  message("
-   
-    ====================================================================================
-    This program is free software: you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public License
-    as published by the Free Software Foundation, either version 3 of
-    the License, or (at your option) any later version.
+  # set bin
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public
-    License along with this program. If not, see
-    <http://www.gnu.org/licenses/>.
-
-    Copyright (C) 2012 dohmatob elvis dopgima
-    ====================================================================================
-    ")
-
+  # build static or shared library type ?
+  option(BUILD_HMM_SHARED "Build HMM as shared library" ON)
+  if(BUILD_HMM_SHARED)
+    set(HMM_LIBRARY_TYPE SHARED)
+  else(BUILD_HMM_SHARED)
+    set(HMM_LIBRARY_TYPE STATIC)
+  endif(BUILD_HMM_SHARED)
+  
   # check Boost
   find_package(Boost 1.42)
   if(Boost_FOUND)
@@ -63,9 +41,7 @@ if(UNIX AND NOT WIN32)
   if(USE_OPENMP)
     find_package(OpenMP)
     if (OPENMP_FOUND)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
     endif(OPENMP_FOUND)
   endif(USE_OPENMP)
 
@@ -92,6 +68,27 @@ if(UNIX AND NOT WIN32)
     add_subdirectory(Examples)
   endif(BUILD_EXAMPLES)
   
+  message("
+   
+    ====================================================================================
+    This program is free software: you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public License
+    as published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program. If not, see
+    <http://www.gnu.org/licenses/>.
+
+    Copyright (C) 2012 dohmatob elvis dopgima
+    ====================================================================================
+    ")
+
 else (UNIX AND NOT WIN32)
   message("NOT FOR WIN32!")
 endif(UNIX AND NOT WIN32)
