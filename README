@@ -16,7 +16,7 @@ $ make
 1. RUN
 ======
 Simply type:
-$ ./bin/HMM
+$ ./bin/martian
 
 
 2. DEPENDENCIES
