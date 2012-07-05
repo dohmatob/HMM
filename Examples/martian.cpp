@@ -10,6 +10,7 @@ using namespace HiddenMarkovModels;
 
 int main(void)
 {
+  // prepare data
   // XXX refactor main into unittest cases
   std::cout << "Loadin: HMM parameters from files .." << std::endl;
   ublas::matrix<real_type> trans = load_hmm_matrix("data/corpus_transition.dat");
@@ -46,26 +47,22 @@ int main(void)
   std::cout << "\nFinal HMM:\n" << hmm;
 
   std::cout << "Viterbi classification of the 26 symbols (cf. letters of the english alphabet):" << std::endl;
-  sequence_type symbol(1);
+  sequence_type seq(1);
   unsigned int correction;
-  for (int j = 0; j < 26; j++)
+  for (int symbol = 0; symbol < 26; symbol++)
     {
-      symbol[0] = j;
+      seq[0] = symbol;
       boost::tuple<sequence_type,
 		   real_type
-		   > path = hmm.viterbi(symbol);
+		   > path = hmm.viterbi(seq);
 
       unsigned int which = boost::get<0>(path)[0]; // vowel or consonant ?
 
-      // let's call a's cluster "vowel" and call the other cluster "consonant"
-      if (j == 0)
-	{
-	  correction = which;
-	}
-      which = correction ? 1 - which : which;
+      // let's call letter A's cluster "vowel" and call the other cluster "consonant"
+      correction = symbol ? correction : which;
+      which = correction ? 1-which : which;
 
-      printf("\t%c is a %s\n", __toascii('A')+j, which?"consonant":"vowel");
-      // std::cout << "\t" << j << " is in class " << boost::get<0>(path)[0] << std::endl;
+      printf("\t%c is a %s\n", __toascii('A')+symbol, which ? "consonant" : "vowel");
     }
 
   return 0;
