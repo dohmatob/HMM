@@ -22,10 +22,10 @@ std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s
 /**
  * method to compute logarithm of vector
  **/
-ublas::vector<HiddenMarkovModels::real_type> HiddenMarkovModels::vlog(const ublas::vector<HiddenMarkovModels::real_type> &u)
+HiddenMarkovModels::vector HiddenMarkovModels::vlog(const HiddenMarkovModels::vector &u)
 {
   // output vector
-  ublas::vector<HiddenMarkovModels::real_type> v(u.size());
+  HiddenMarkovModels::vector v(u.size());
 
   for (int i = 0; i < u.size(); i++)
     {
@@ -35,9 +35,9 @@ ublas::vector<HiddenMarkovModels::real_type> HiddenMarkovModels::vlog(const ubla
   return v;
 }
 
-ublas::matrix<HiddenMarkovModels::real_type> HiddenMarkovModels::mlog(const ublas::matrix<HiddenMarkovModels::real_type> &A)
+HiddenMarkovModels::matrix HiddenMarkovModels::mlog(const HiddenMarkovModels::matrix &A)
 {
-  ublas::matrix<HiddenMarkovModels::real_type> B(A.size1(), A.size2());
+  HiddenMarkovModels::matrix B(A.size1(), A.size2());
 
   for (int i = 0; i < A.size1(); i++)
     {
@@ -49,7 +49,7 @@ ublas::matrix<HiddenMarkovModels::real_type> HiddenMarkovModels::mlog(const ubla
 
 boost::tuple<int, // index at which max is attained
 	     HiddenMarkovModels::real_type // max value
-	     > HiddenMarkovModels::argmax(ublas::vector<HiddenMarkovModels::real_type> &u)
+	     > HiddenMarkovModels::argmax(HiddenMarkovModels::vector &u)
 {
   int index = 0;
   HiddenMarkovModels::real_type value = u(0);
@@ -67,9 +67,9 @@ boost::tuple<int, // index at which max is attained
   return boost::make_tuple(index,value);
 }
 
-HiddenMarkovModels::HMM::HMM(ublas::matrix<HiddenMarkovModels::real_type> transition,
-	 ublas::matrix<HiddenMarkovModels::real_type> emission,
-	 ublas::vector<HiddenMarkovModels::real_type> pi)
+HiddenMarkovModels::HMM::HMM(HiddenMarkovModels::matrix transition,
+	 HiddenMarkovModels::matrix emission,
+	 HiddenMarkovModels::vector pi)
 {
   // sanity checks on matrix dimensions
   BOOST_ASSERT(pi.size()==emission.size1());
@@ -104,6 +104,59 @@ HiddenMarkovModels::HMM::HMM(ublas::matrix<HiddenMarkovModels::real_type> transi
   _nsymbols = emission.size2();
 }
 
+bool HiddenMarkovModels::is_stochastic_vector(const HiddenMarkovModels::vector& v)
+{
+  for (int i = 0; i < v.size(); i++)
+    {
+      if(v[i] < 0)
+	{
+	  return false;
+	}
+    }
+
+  return true;
+}
+
+bool HiddenMarkovModels::is_stochastic_matrix(const HiddenMarkovModels::matrix& m)
+{
+  for (int i = 0; i < m.size1(); i++)
+    {
+      if(!is_stochastic_vector(row(m, i)))
+	{
+	  return false;
+	}
+    }
+
+  return true;
+}
+ 
+void HiddenMarkovModels::HMM::set_transition(const HiddenMarkovModels::matrix& transition)
+{
+  BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(transition));
+
+  for (int i = 0; i < transition.size1(); i++)
+    {
+      row(_transition, i) = row(transition, i)/sum(row(transition, i));
+    }
+}
+
+void HiddenMarkovModels::HMM::set_emission(const HiddenMarkovModels::matrix& emission)
+{
+  BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(emission));
+
+  for (int i = 0; i < emission.size1(); i++)
+    {
+      row(_emission, i) = row(emission, i)/sum(row(emission, i));
+    }
+}
+      
+void HiddenMarkovModels::HMM::set_pi(const HiddenMarkovModels::vector& pi)
+{
+  BOOST_ASSERT(HiddenMarkovModels::is_stochastic_vector(pi));
+  
+  _pi = pi/sum(pi);
+}
+
 int HiddenMarkovModels::HMM::get_nstates(void)
 {
   return _nstates;
@@ -114,22 +167,22 @@ int HiddenMarkovModels::HMM::get_nsymbols(void)
   return _nsymbols;
 }
 
-const ublas::matrix<HiddenMarkovModels::real_type>& HiddenMarkovModels::HMM::get_transition(void)
+const HiddenMarkovModels::matrix& HiddenMarkovModels::HMM::get_transition(void)
 {
   return _transition;
 }
 
-const ublas::matrix<HiddenMarkovModels::real_type>& HiddenMarkovModels::HMM::get_emission(void)
+const HiddenMarkovModels::matrix& HiddenMarkovModels::HMM::get_emission(void)
 {
   return _emission;
 }
 
-const ublas::vector<HiddenMarkovModels::real_type>& HiddenMarkovModels::HMM::get_pi(void)
+const HiddenMarkovModels::vector& HiddenMarkovModels::HMM::get_pi(void)
 {
   return _pi;
 }
 
-bool HiddenMarkovModels::HMM::isSymbol(unsigned int i)
+bool HiddenMarkovModels::HMM::is_symbol(unsigned int i)
 {
   return 0 <= i && i < _nsymbols;
 }
@@ -142,16 +195,16 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
   int T = obseq.size();
   HiddenMarkovModels::sequence_type hiddenseq(T); // optimal path (sequence of hidden states that generated observed trace)
   HiddenMarkovModels::real_type likelihood;
-  ublas::matrix<HiddenMarkovModels::real_type> delta(T, _nstates);
+  HiddenMarkovModels::matrix delta(T, _nstates);
   ublas::matrix<int> phi(T, _nstates);
 
   // logarithms, so we don't suffer underflow!
-  ublas::matrix<HiddenMarkovModels::real_type> logtransition = HiddenMarkovModels::mlog(_transition);
-  ublas::matrix<HiddenMarkovModels::real_type> logemission = HiddenMarkovModels::mlog(_emission);
-  ublas::vector<HiddenMarkovModels::real_type> logpi = HiddenMarkovModels::vlog(_pi);
+  HiddenMarkovModels::matrix logtransition = HiddenMarkovModels::mlog(_transition);
+  HiddenMarkovModels::matrix logemission = HiddenMarkovModels::mlog(_emission);
+  HiddenMarkovModels::vector logpi = HiddenMarkovModels::vlog(_pi);
 
   // compute stuff for time = 0
-  BOOST_ASSERT(isSymbol(obseq[0]));
+  BOOST_ASSERT(is_symbol(obseq[0]));
   row(delta,0) = logpi + column(logemission, obseq[0]);
   for (int j = 0; j < _nstates; j++)
     {
@@ -163,18 +216,18 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
     {
       for (int j = 0; j < _nstates; j++)
 	{
-	  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta, time-1)+column(logtransition, j);
+	  HiddenMarkovModels::vector tmp = row(delta, time-1)+column(logtransition, j);
 	  boost::tuple<int,
 		       HiddenMarkovModels::real_type
 		       > x = HiddenMarkovModels::argmax(tmp);
-	  BOOST_ASSERT(isSymbol(obseq[time]));
+	  BOOST_ASSERT(is_symbol(obseq[time]));
 	  delta(time, j) = boost::get<1>(x)+logemission(j, obseq[time]);
 	  phi(time, j) = boost::get<0>(x);
 	}
     }
 
   // set last node on optimal path
-  ublas::vector<HiddenMarkovModels::real_type> tmp = row(delta, T-1);
+  HiddenMarkovModels::vector tmp = row(delta, T-1);
   boost::tuple<int,
 	       HiddenMarkovModels::real_type
 	       > x = HiddenMarkovModels::argmax(tmp);
@@ -192,22 +245,22 @@ boost::tuple<HiddenMarkovModels::sequence_type, // optimal path
   return boost::make_tuple(hiddenseq, likelihood);
 }
 
-boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
-	     ublas::matrix<HiddenMarkovModels::real_type>, // beta-hat
-	     ublas::matrix<HiddenMarkovModels::real_type>, // gamma-hat
+boost::tuple<HiddenMarkovModels::matrix, // alpha-hat
+	     HiddenMarkovModels::matrix, // beta-hat
+	     HiddenMarkovModels::matrix, // gamma-hat
 	     boost::multi_array<HiddenMarkovModels::real_type,3>, // epsilon-hat
 	     HiddenMarkovModels::real_type // likelihood
 	     > HiddenMarkovModels::HMM::forward_backward(const HiddenMarkovModels::sequence_type &obseq)
 {
   // variables
   unsigned int T = obseq.size();
-  ublas::vector<HiddenMarkovModels::real_type> scalers(T); // these things will prevent underflow, etc.
-  ublas::matrix<HiddenMarkovModels::real_type> alphatilde(T, _nstates);
-  ublas::matrix<HiddenMarkovModels::real_type> alphahat(T, _nstates); // forward variables
-  ublas::matrix<HiddenMarkovModels::real_type> betatilde(T, _nstates); 
-  ublas::matrix<HiddenMarkovModels::real_type> betahat(T, _nstates); // backward variables
-  ublas::matrix<HiddenMarkovModels::real_type> gammahat(T, _nstates);
-  ublas::vector<HiddenMarkovModels::real_type> tmp(_nstates);
+  HiddenMarkovModels::vector scalers(T); // these things will prevent underflow, etc.
+  HiddenMarkovModels::matrix alphatilde(T, _nstates);
+  HiddenMarkovModels::matrix alphahat(T, _nstates); // forward variables
+  HiddenMarkovModels::matrix betatilde(T, _nstates); 
+  HiddenMarkovModels::matrix betahat(T, _nstates); // backward variables
+  HiddenMarkovModels::matrix gammahat(T, _nstates);
+  HiddenMarkovModels::vector tmp(_nstates);
   boost::multi_array<HiddenMarkovModels::real_type,3> epsilonhat(boost::extents[T-1][_nstates][_nstates]);
   HiddenMarkovModels::real_type likelihood;
 
@@ -215,7 +268,7 @@ boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
 #pragma omp parallel for ordered
   for (int time = 0; time < T; time++)
     {
-      BOOST_ASSERT(isSymbol(obseq[time]));
+      BOOST_ASSERT(is_symbol(obseq[time]));
       if (time == 0)
 	{
 	  row(alphatilde, time) = element_prod(_pi, column(_emission, obseq[time]));
@@ -283,13 +336,13 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
 
   // variables
   HiddenMarkovModels::real_type likelihood;
-  ublas::matrix<HiddenMarkovModels::real_type> A(_nstates, _nstates); // transition matrix for learned model
-  ublas::matrix<HiddenMarkovModels::real_type> B(_nstates, _nsymbols); // emission matrix for learned model
-  ublas::vector<HiddenMarkovModels::real_type> pi(_nstates); // initial distribution for learned model
+  HiddenMarkovModels::matrix A(_nstates, _nstates); // transition matrix for learned model
+  HiddenMarkovModels::matrix B(_nstates, _nsymbols); // emission matrix for learned model
+  HiddenMarkovModels::vector pi(_nstates); // initial distribution for learned model
   boost::multi_array<HiddenMarkovModels::real_type, 3> u(boost::extents[obseqs.size()][_nstates][_nstates]);
   boost::multi_array<HiddenMarkovModels::real_type, 3> w(boost::extents[obseqs.size()][_nstates][_nsymbols]);
-  ublas::matrix<HiddenMarkovModels::real_type> v(obseqs.size(), _nstates);
-  ublas::matrix<HiddenMarkovModels::real_type> x(obseqs.size(), _nstates);
+  HiddenMarkovModels::matrix v(obseqs.size(), _nstates);
+  HiddenMarkovModels::matrix x(obseqs.size(), _nstates);
   
   // initializations
   pi = ublas::zero_vector<HiddenMarkovModels::real_type>(_nstates);
@@ -306,15 +359,15 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
       int T = obseqs[k].size();
 
       // run Forward-Backward
-      boost::tuple<ublas::matrix<HiddenMarkovModels::real_type>, // alpha-hat
-		   ublas::matrix<HiddenMarkovModels::real_type>, // beta-hat
-		   ublas::matrix<HiddenMarkovModels::real_type>, // gamma-hat
+      boost::tuple<HiddenMarkovModels::matrix, // alpha-hat
+		   HiddenMarkovModels::matrix, // beta-hat
+		   HiddenMarkovModels::matrix, // gamma-hat
 		   boost::multi_array<HiddenMarkovModels::real_type, 3>, // epsilon-hat
 		   HiddenMarkovModels::real_type // likelihood
 		   >  fb = forward_backward(obseqs[k]);
-      ublas::matrix<HiddenMarkovModels::real_type> alphahat = boost::get<0>(fb);
-      ublas::matrix<HiddenMarkovModels::real_type> betahat = boost::get<1>(fb);
-      ublas::matrix<HiddenMarkovModels::real_type> gammahat = boost::get<2>(fb);
+      HiddenMarkovModels::matrix alphahat = boost::get<0>(fb);
+      HiddenMarkovModels::matrix betahat = boost::get<1>(fb);
+      HiddenMarkovModels::matrix gammahat = boost::get<2>(fb);
       boost::multi_array<HiddenMarkovModels::real_type, 3> epsilonhat = boost::get<3>(fb);
 
       // update likelihood
@@ -449,7 +502,7 @@ std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, HiddenMarkovMod
   return cout;
 }
 
-ublas::matrix<HiddenMarkovModels::real_type> HiddenMarkovModels::load_hmm_matrix(const char *filename)
+HiddenMarkovModels::matrix HiddenMarkovModels::load_hmm_matrix(const char *filename)
 {
   // XXX check that filename exists
 
@@ -486,7 +539,7 @@ ublas::matrix<HiddenMarkovModels::real_type> HiddenMarkovModels::load_hmm_matrix
     }
 
   // pack the std array into a ublas matrix
-  ublas::matrix<HiddenMarkovModels::real_type> X(n, m);
+  HiddenMarkovModels::matrix X(n, m);
   for (int i = 0; i < n; i++)
     {
       for (int j = 0; j < m; j++)
@@ -499,7 +552,7 @@ ublas::matrix<HiddenMarkovModels::real_type> HiddenMarkovModels::load_hmm_matrix
   return X;
 }
 
-ublas::vector<HiddenMarkovModels::real_type> HiddenMarkovModels::load_hmm_vector(const char *filename)
+HiddenMarkovModels::vector HiddenMarkovModels::load_hmm_vector(const char *filename)
 {
   // XXX check that filename exists
 

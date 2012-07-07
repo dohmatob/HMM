@@ -1,10 +1,3 @@
-// $Id$
-/**
-   @file HMM.h
-   @author DOP (dohmatob elvis dopgima)
-   @brief principal header file
- **/
-
 #ifndef HMM_H
 #define HMM_H
 
@@ -33,112 +26,223 @@ namespace HiddenMarkovModels
    **/
   typedef double real_type;
   typedef std::vector<unsigned int> sequence_type;
+  typedef ublas::matrix<real_type> matrix;
+  typedef ublas::vector<real_type> vector;
 
   /** 
-      function to display sequences
+      Function to display sequences.
    **/
   std::ostream &operator<<(std::ostream &cout, sequence_type seq);
 
   /**
-     method to compute logarithm of vector
+     Function to compute logarithm of vector.
 
-     @param[in] u vector whose logarithm is to be computed
+     @param u - vector whose logarithm is to be computed
      @return Logarithm of input vector
   **/
-  ublas::vector<real_type> vlog(const ublas::vector<real_type> &u);
+  vector vlog(const vector &u);
   
   /** 
-      method to compute logarithm of matrix
+      Function to compute logarithm of matrix.
       
-      @param[in] m matrix whose logarithm is to be computed
-      @return Logarithm of input matrix
+      @param m - matrix whose logarithm is to be computed
+      @return logarithm of input matrix
   **/
-  ublas::matrix<real_type> mlog(const ublas::matrix<real_type> &A);
-  
+  matrix mlog(const matrix &A);
+
+  /**
+     Function to check whether matrix is stochastic.
+
+     @param m - matrix to be checked for stochasticity
+     @return true if matrix if stochastic, false otherwise
+  **/
+  bool is_stochastic_matrix(const matrix& m);
+
+  /**
+     Function to check whether vector is stochastic.
+     
+     @param v - vector to be checked for stochasticity
+     @return true if vector if stochastic, false otherwise
+  **/
+  bool is_stochastic_vector(const vector& v);
+
+  /** @brief Class to incapsulate Hidden Markov Models
+      
+      @author DOP (dohmatob elvis dopgima)
+  **/
   class HMM
   {
   private:
-    int _nstates; // number of hidden states in the the model
-    int _nsymbols; // size of observable alphabet
-    ublas::matrix<real_type> _transition; // transition probabilities
-    ublas::matrix<real_type> _emission; // emission probabilites
-    ublas::vector<real_type> _pi; // initial distribution of hidden states
+    int _nstates;/**<number of hidden states in the the model*/
+    int _nsymbols; /**<size of observable alphabet*/
+    matrix _transition; /**<transition probabilities*/
+    matrix _emission; /**<emission probabilites*/
+    vector _pi; /**<initial distribution of hidden states*/
     
   public:
-    HMM(ublas::matrix<real_type> transition,
-	ublas::matrix<real_type> emission,
-	ublas::vector<real_type> pi);
+    /**
+       Default constructor.
+
+       @param transition - transition matrix of model
+       @param emission - emission matrix of model 
+       @param pi - initial distribution of hidden states of model
+       @return handle to newly instantiated HMM object
+     **/
+    HMM(matrix transition,
+	matrix emission,
+	vector pi);
+
+    /**
+       Constructor by model order.
+
+       @param nstates - the number of hidden states in the model
+       @param nsymbols - the emitted symbol alphabet size of the model
+    **/
+    HMM(int nstates, int nsymbols);
     
     /**
-     * methods to get model parameters
+       Method to set model transition matrix of model.
+
+       @param transition - transition matrix to assign to model
+    **/
+    void set_transition(const matrix& transition);
+    
+    /**
+       Method to set model emission matrix of model.
+       
+       @param emission - emission matrix to assign to model
+    **/
+    void set_emission(const matrix& emission);
+    
+    /**
+       Method to set initial distribution of hidden states of model.
+       
+       @param pi - initial distribution of hidden states, to assign to model
+    **/
+    void set_pi(const vector& pi);
+
+    /**
+       Method to get model number of hidden states.
+
+       @return number of hidden states of model
      **/
     int get_nstates(void);
-    int get_nsymbols(void);
-    const ublas::matrix<real_type> &get_transition(void);
-    const ublas::matrix<real_type> &get_emission(void);
-    const ublas::vector<real_type> &get_pi(void);
-    
-    /** 
-     * method to verify sanity of symbols (crucial, since symbols will be directly used as indices in emission matrix)
+
+    /**
+       Method to get model number of symbols.
+
+       @return size of symbol alphabet of model
      **/
-    bool isSymbol(unsigned int i);
+    int get_nsymbols(void);
+
+    /**
+       Method to get model transition matrix.
+
+       @return transition matrix of model
+     **/
+    const matrix &get_transition(void);
+
+    /**
+       Method to get model emission matrix.
+
+       @return emission matrix of model
+     **/
+    const matrix &get_emission(void);
+
+    /**
+       Method to get model initial distribution of hidden states.
+       
+       @return initial distribution of hidden states of model
+     **/
+    const vector &get_pi(void);
     
     /** 
-     * the Viterbi algorithm
+	Method to verify sanity of symbols (crucial, since symbols will be directly used as indices in emission matrix).
+	
+	@param i - symbol to be checked for sanity
+	@return boolean (symbol is sane or insane)
+     **/
+    bool is_symbol(unsigned int i);
+    
+    /** 
+	The Viterbi algorithm.
+
+	@param obseq - the sequence of observations to be decoded
+	@return a tuple of the optimal hidden state path to have produced the observation, and its likelihood
      **/
     boost::tuple<sequence_type, // optimal path
       real_type // likelihood of path
       > viterbi(const sequence_type &obseq);
     
     /**
-     * method to to compute forward and backward parameters of the Baum-Welch algorithm
+       Method to to compute forward and backward parameters of the Baum-Welch algorithm.
+
+       @param obseq - a sequence of observations       
+       @return a tuple of (in technical jargon) alpha-hat, beta-hat, gamma-hat, and epsilon-hat
      **/
-    boost::tuple<ublas::matrix<real_type>, // alpha-hat
-		 ublas::matrix<real_type>, // beta-hat
-		 ublas::matrix<real_type>, // gamma-hat
+    boost::tuple<matrix, // alpha-hat
+		 matrix, // beta-hat
+		 matrix, // gamma-hat
 		 boost::multi_array<real_type, 3>, // epsilon-hat
 		 real_type // likelihood
 		 > forward_backward(const sequence_type &obseq);
   
-  /** 
-   * method to learn new model from old, using the Baum-Welch algorithm
-   **/
-  boost::tuple<HMM, // the learned model
-	       real_type // the likelihood of the sequences of observations, under this new model
-	       > learn(const std::vector<sequence_type> &obseqs);
+    /** 
+	Method to learn new model from old, using the Baum-Welch algorithm
+	
+	@param obseqs - observation sequences to learn from
+	@return a tuple of the learned model (HMM object) and the it likelihood
+    **/
+    boost::tuple<HMM, 
+		 real_type 
+		 > learn(const std::vector<sequence_type> &obseqs);
   
     /** 
-     * the Baum-Welch algorithm for multiple observation sequences
+	The Baum-Welch algorithm for multiple observation sequences.
+
+	@param obseqs - observation sequences to learn from
+	@param tolerance - tolerance level for convergence
+	@param maxiter - maximum number of iterations
+	@return a tuple of the learned model (HMM object) and the it likelihood
      **/
-    boost::tuple<HMM, // the learned model
-		 real_type // the likelihood of the sequences of observations, under this new model
-		 > baum_welch(const std::vector<sequence_type> &obseqs, //
-			      real_type tolerance=1e-9, // tolerance level for convergence
-			      unsigned int maxiter=200 // maximum number of iterations
+    boost::tuple<HMM,
+		 real_type 
+		 > baum_welch(const std::vector<sequence_type> &obseqs, 
+			      real_type tolerance=1e-9, 
+			      unsigned int maxiter=200 
 			      );
   }; 
   
   /**
-   * function to compute the maximum value of a vector and the (first!)  index at which it is attained 
+     Function to compute the maximum value of a vector and the (first!)  index at which it is attained.
+
+     @param u - vector whose argmax is sought-for
+     @return - a tuple of the index of which the max is attained, and the max itself
    **/
   boost::tuple<int,
 	       real_type
-	       > argmax(ublas::vector<real_type> &u);
+	       > argmax(vector &u);
   
   /**
-   * so we may display HMM objects
+     An overloading of the std operator <<, So we may display HMM objects.
+
+     @param cout - cout
+     @param hmm - HMM object to be displayed
    **/
   std::ostream &operator<<(std::ostream &cout, HMM &hmm);
  
   /**
-   * function to load an matrix from a file
+     Function to load a matrix from a file.
+
+     @param filename - name of file containing matrix to be read
+     @return - read matrix
    **/
-  ublas::matrix<real_type> load_hmm_matrix(const char *filename);
+  matrix load_hmm_matrix(const char *filename);
   
   /** 
-   * function to load a vector from a file
+      Function to load a vector from a file.
    **/
-  ublas::vector<real_type> load_hmm_vector(const char *filename);
+  vector load_hmm_vector(const char *filename);
   
   /** 
    * function to load a sequence of observations from a file

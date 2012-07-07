@@ -13,9 +13,9 @@ int main(void)
   // prepare data
   // XXX refactor main into unittest cases
   std::cout << "Loadin: HMM parameters from files .." << std::endl;
-  ublas::matrix<real_type> trans = load_hmm_matrix("data/corpus_transition.dat");
-  ublas::matrix<real_type> em = load_hmm_matrix("data/corpus_emission.dat");
-  ublas::vector<real_type> pi = load_hmm_vector("data/corpus_pi.dat");
+  matrix trans = load_hmm_matrix("data/corpus_transition.dat");
+  matrix em = load_hmm_matrix("data/corpus_emission.dat");
+  vector pi = load_hmm_vector("data/corpus_pi.dat");
   std::cout << "Done.\n" << std::endl;
 
   // initialize HMM object
