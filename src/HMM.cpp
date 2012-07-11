@@ -1,71 +1,11 @@
-// (c) 2012 DOP (dohmatob elvis dopgima)
-// martian.cpp: usage example: a Martian who learnes english vowels and consonants from the Brown corpus
+/*!
+  \file HMM.cpp
+  \brief Implementation of HiddenMarkovModels::HMM class
+  \author DOP (dohmatob elvis dopgima)
+*/
 
 #include "HMM.hpp" // pull-in stuff (namespaces, classes, functions, etc.) to implement
-
-/** 
- * so we can display sequences
- **/
-std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s)
-{
-  cout << "[" << s.size() << "](";
-  for (int i = 0; i < s.size(); i++)
-    {
-      cout << s[i] << (i < s.size()-1 ? "," : "");
-    }
-
-  cout << ")";
-
-  return cout;
-}
-
-/**
- * method to compute logarithm of vector
- **/
-HiddenMarkovModels::vector HiddenMarkovModels::vlog(const HiddenMarkovModels::vector &u)
-{
-  // output vector
-  HiddenMarkovModels::vector v(u.size());
-
-  for (int i = 0; i < u.size(); i++)
-    {
-      v(i) = std::log(u(i));
-    }
-
-  return v;
-}
-
-HiddenMarkovModels::matrix HiddenMarkovModels::mlog(const HiddenMarkovModels::matrix &A)
-{
-  HiddenMarkovModels::matrix B(A.size1(), A.size2());
-
-  for (int i = 0; i < A.size1(); i++)
-    {
-      row(B, i) = HiddenMarkovModels::vlog(row(A, i));
-    }
-
-  return B;
-}
-
-boost::tuple<int, // index at which max is attained
-	     HiddenMarkovModels::real_type // max value
-	     > HiddenMarkovModels::argmax(HiddenMarkovModels::vector &u)
-{
-  int index = 0;
-  HiddenMarkovModels::real_type value = u(0);
-
-  for (int i = 0; i < u.size(); i++)
-    {
-      if (u(i) > value)
-	{
-	  value = u(i);
-	  index = i;
-	}
-    }
-
-  // render results
-  return boost::make_tuple(index,value);
-}
+#include "HMMUtils.hpp"
 
 HiddenMarkovModels::HMM::HMM(HiddenMarkovModels::matrix transition,
 	 HiddenMarkovModels::matrix emission,
@@ -103,32 +43,6 @@ HiddenMarkovModels::HMM::HMM(HiddenMarkovModels::matrix transition,
   _nstates = pi.size();
   _nsymbols = emission.size2();
 }
-
-bool HiddenMarkovModels::is_stochastic_vector(const HiddenMarkovModels::vector& v)
-{
-  for (int i = 0; i < v.size(); i++)
-    {
-      if(v[i] < 0)
-	{
-	  return false;
-	}
-    }
-
-  return true;
-}
-
-bool HiddenMarkovModels::is_stochastic_matrix(const HiddenMarkovModels::matrix& m)
-{
-  for (int i = 0; i < m.size1(); i++)
-    {
-      if(!is_stochastic_vector(row(m, i)))
-	{
-	  return false;
-	}
-    }
-
-  return true;
-}
  
 void HiddenMarkovModels::HMM::set_transition(const HiddenMarkovModels::matrix& transition)
 {
@@ -157,32 +71,32 @@ void HiddenMarkovModels::HMM::set_pi(const HiddenMarkovModels::vector& pi)
   _pi = pi/sum(pi);
 }
 
-int HiddenMarkovModels::HMM::get_nstates(void)
+int HiddenMarkovModels::HMM::get_nstates(void) const
 {
   return _nstates;
 }
 
-int HiddenMarkovModels::HMM::get_nsymbols(void)
+int HiddenMarkovModels::HMM::get_nsymbols(void) const
 {
   return _nsymbols;
 }
 
-const HiddenMarkovModels::matrix& HiddenMarkovModels::HMM::get_transition(void)
+const HiddenMarkovModels::matrix& HiddenMarkovModels::HMM::get_transition(void) const
 {
   return _transition;
 }
 
-const HiddenMarkovModels::matrix& HiddenMarkovModels::HMM::get_emission(void)
+const HiddenMarkovModels::matrix& HiddenMarkovModels::HMM::get_emission(void) const
 {
   return _emission;
 }
 
-const HiddenMarkovModels::vector& HiddenMarkovModels::HMM::get_pi(void)
+const HiddenMarkovModels::vector& HiddenMarkovModels::HMM::get_pi(void) const
 {
   return _pi;
 }
 
-bool HiddenMarkovModels::HMM::is_symbol(unsigned int i)
+bool HiddenMarkovModels::HMM::is_symbol(unsigned int i) const
 {
   return 0 <= i && i < _nsymbols;
 }

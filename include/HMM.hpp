@@ -1,14 +1,13 @@
 #ifndef HMM_H
 #define HMM_H
 
-// Boost 
-#include <boost/numeric/ublas/matrix.hpp> // matrix algebra
-#include <boost/numeric/ublas/matrix_proxy.hpp> // extract matrix row, matrix column, etc.
-#include <boost/numeric/ublas/io.hpp> // display matrix, etc.
-#include <boost/multi_array.hpp> // for multi-dimensional arrays (aka tensors), etc.
-#include <boost/assign/std/vector.hpp> // operator+=() for vectors, etc.
-#include <boost/assert.hpp>
-#include <boost/tuple/tuple.hpp> // so I can return multiple values from functions (like in python)
+/*!
+  \file HMM.hpp
+  \brief Specification of HiddenMarkovModels interface.
+  \author DOP (dophmatob elvis dopgima)
+*/
+
+#include "HMMBasicTypes.hpp"
 
 // native headers
 #include <math.h> // log, abs, etc.
@@ -16,60 +15,17 @@
 #include <fstream> // file handling functions like getline, etc.
 #include <sstream>
 
-namespace ublas = boost::numeric::ublas; // namespace alias (saner than 'using ...')
-using namespace boost::assign; 
-
+/*!
+  \namespace HiddenMarkovModels
+  \brief This namespace groups types (classes, etc.) and functions related to Hidden Markov Models.
+  \author DOP (dohmatob elvis dopgima)
+*/
 namespace HiddenMarkovModels
 {
-  /**
-   * basic types
-   **/
-  typedef double real_type;
-  typedef std::vector<unsigned int> sequence_type;
-  typedef ublas::matrix<real_type> matrix;
-  typedef ublas::vector<real_type> vector;
-
-  /** 
-      Function to display sequences.
-   **/
-  std::ostream &operator<<(std::ostream &cout, sequence_type seq);
-
-  /**
-     Function to compute logarithm of vector.
-
-     @param u - vector whose logarithm is to be computed
-     @return Logarithm of input vector
-  **/
-  vector vlog(const vector &u);
-  
-  /** 
-      Function to compute logarithm of matrix.
-      
-      @param m - matrix whose logarithm is to be computed
-      @return logarithm of input matrix
-  **/
-  matrix mlog(const matrix &A);
-
-  /**
-     Function to check whether matrix is stochastic.
-
-     @param m - matrix to be checked for stochasticity
-     @return true if matrix if stochastic, false otherwise
-  **/
-  bool is_stochastic_matrix(const matrix& m);
-
-  /**
-     Function to check whether vector is stochastic.
-     
-     @param v - vector to be checked for stochasticity
-     @return true if vector if stochastic, false otherwise
-  **/
-  bool is_stochastic_vector(const vector& v);
-
-  /** @brief Class to incapsulate Hidden Markov Models
-      
-      @author DOP (dohmatob elvis dopgima)
-  **/
+  /*!
+    \class HMM
+    \brief This class declares the structure of a Hidden Markov Model object
+  */
   class HMM
   {
   private:
@@ -126,35 +82,35 @@ namespace HiddenMarkovModels
 
        @return number of hidden states of model
      **/
-    int get_nstates(void);
+    int get_nstates(void) const;
 
     /**
        Method to get model number of symbols.
 
        @return size of symbol alphabet of model
      **/
-    int get_nsymbols(void);
+    int get_nsymbols(void) const;
 
     /**
        Method to get model transition matrix.
 
        @return transition matrix of model
      **/
-    const matrix &get_transition(void);
+    const matrix &get_transition(void) const;
 
     /**
        Method to get model emission matrix.
 
        @return emission matrix of model
      **/
-    const matrix &get_emission(void);
+    const matrix &get_emission(void) const;
 
     /**
        Method to get model initial distribution of hidden states.
        
        @return initial distribution of hidden states of model
      **/
-    const vector &get_pi(void);
+    const vector &get_pi(void) const;
     
     /** 
 	Method to verify sanity of symbols (crucial, since symbols will be directly used as indices in emission matrix).
@@ -162,7 +118,7 @@ namespace HiddenMarkovModels
 	@param i - symbol to be checked for sanity
 	@return boolean (symbol is sane or insane)
      **/
-    bool is_symbol(unsigned int i);
+    bool is_symbol(unsigned int i) const;
     
     /** 
 	The Viterbi algorithm.
@@ -212,17 +168,7 @@ namespace HiddenMarkovModels
 			      unsigned int maxiter=200 
 			      );
   }; 
-  
-  /**
-     Function to compute the maximum value of a vector and the (first!)  index at which it is attained.
-
-     @param u - vector whose argmax is sought-for
-     @return - a tuple of the index of which the max is attained, and the max itself
-   **/
-  boost::tuple<int,
-	       real_type
-	       > argmax(vector &u);
-  
+    
   /**
      An overloading of the std operator <<, So we may display HMM objects.
 

@@ -1,14 +1,18 @@
-// (c) 2012 DOP (dohmatob elvis dopgima)
-// main.cpp: main source file
+/*!
+  \file martian.cpp
+  \brief example usage of HMM library: a Martian learned basic English Language (vowels and consonants) 
+  \author DOP (dohmatob elvis dopgima)
+*/
 
-#include "HMM.hpp"
+#include "HMM.hpp" // pull-in HiddenMarkovModels .. 
+#include "HMMUtils.hpp" // namespace
 #include <algorithm> // random_shuffle, etc.
 #include <ctype.h> //__toascii
 #include <stdio.h> // printf
 
 using namespace HiddenMarkovModels;
 
-int main(void)
+int main(int argc, const char *argv[])
 {
   // prepare data
   // XXX refactor main into unittest cases
