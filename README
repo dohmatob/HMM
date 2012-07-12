@@ -22,6 +22,8 @@ $ ./bin/martian
 2. DEPENDENCIES
 ===============
 - Boost c++ libraries (get from boost.org site)
-- CMake tool set
+- Doxygen (optional, for automatic in-source generation of API documentation)
+- OpenMP (optional, for parallelization)
+- CMake (version 2.6 or later)
 
 GOOD LUCK!
