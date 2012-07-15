@@ -24,7 +24,7 @@ namespace HiddenMarkovModels
 {
   /*!
     \class HMM
-    \brief This class declares the structure of a Hidden Markov Model object
+    \brief This class encapsulates the structure of a Hidden Markov Model object
   */
   class HMM
   {

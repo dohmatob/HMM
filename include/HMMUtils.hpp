@@ -51,11 +51,6 @@ namespace HiddenMarkovModels
   **/
   bool is_stochastic_vector(const vector& v);
 
-  /** @brief Class to incapsulate Hidden Markov Models
-      
-      @author DOP (dohmatob elvis dopgima)
-  **/
-
   /**
      Function to compute the maximum value of a vector and the (first!)  index at which it is attained.
 
