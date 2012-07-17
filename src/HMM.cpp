@@ -367,7 +367,7 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
 	}
 
       std::cout << std::endl;
-      std::cout << "iteration: " << iteration << std::endl;
+      std::cout << "Iteration: " << iteration << std::endl;
       iteration++;
 
       // learn
@@ -376,7 +376,7 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
 		   > learned = learn(obseqs);
       HMM new_hmm = boost::get<0>(learned);
       real_type new_likelihood = boost::get<1>(learned); 
-      std::cout << "\tlikelihood: " << new_likelihood << std::endl;
+      std::cout << "\tLikelihood: " << new_likelihood << std::endl;
 
       // converged ?
       if (new_likelihood == 0.0)
@@ -388,7 +388,7 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
       // update this model
       relative_gain = (new_likelihood - likelihood)/abs(new_likelihood);
       BOOST_ASSERT(relative_gain >= 0); // if this fails, then something is terribly wrong with the implementation!
-      std::cout << "\trelative gain: " << relative_gain << std::endl;
+      std::cout << "\tRelative gain in likelihood: " << relative_gain << std::endl;
       _transition = new_hmm.get_transition();
       _emission = new_hmm.get_emission();
       _pi = new_hmm.get_pi();
