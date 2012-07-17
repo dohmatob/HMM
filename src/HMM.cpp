@@ -440,7 +440,6 @@ HiddenMarkovModels::matrix HiddenMarkovModels::load_hmm_matrix(const char *filen
       for (int j = 0; j < m; j++)
 	{
 	  X(i, j) = data[i][j];
-
 	}
     }
 
