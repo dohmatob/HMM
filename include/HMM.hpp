@@ -29,8 +29,6 @@ namespace HiddenMarkovModels
   class HMM
   {
   private:
-    int _nstates;/**<number of hidden states in the the model*/
-    int _nsymbols; /**<size of observable alphabet*/
     matrix _transition; /**<transition probabilities*/
     matrix _emission; /**<emission probabilites*/
     vector _pi; /**<initial distribution of hidden states*/

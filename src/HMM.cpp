@@ -12,45 +12,24 @@ HiddenMarkovModels::HMM::HMM(HiddenMarkovModels::matrix transition,
 	 HiddenMarkovModels::vector pi)
 {
   // sanity checks on matrix dimensions
-  BOOST_ASSERT(pi.size()==emission.size1());
-  BOOST_ASSERT(transition.size1()==emission.size1());
-  BOOST_ASSERT(transition.size2()==emission.size1());
+  BOOST_ASSERT(pi.size() == emission.size1());
+  BOOST_ASSERT(transition.size1() == emission.size1());
+  BOOST_ASSERT(transition.size2() == emission.size1());
 
-  // sanity checks for stochasticity of parameter matrices
-  BOOST_ASSERT(sum(pi) > 0); 
-  pi /= sum(pi); // normalization
-  for (int i = 0; i < transition.size1(); i++)
-    {
-      BOOST_ASSERT(pi[i] >= 0);
-      for (int j = 0; j < transition.size2(); j++)
-	{
-	  BOOST_ASSERT(transition(i, j) >= 0);
-	}      
-      for (int j = 0; j < emission.size2(); j++)
-	{
-	  BOOST_ASSERT(emission(i, j) >= 0);
-	}
-      BOOST_ASSERT(sum(row(transition, i)) > 0); 
-      row(transition, i) /= sum(row(transition, i)); // normalization
-      BOOST_ASSERT(sum(row(emission, i)) > 0);
-      row(emission, i) /= sum(row(emission, i)); // normalization
-    }
-  
   // set parameters of model
-  _transition = transition;
-  _emission = emission;
-  _pi = pi;
-  _nstates = pi.size();
-  _nsymbols = emission.size2();
+  set_transition(transition);
+  set_emission(emission);
+  set_pi(pi);
 }
- 
+
 void HiddenMarkovModels::HMM::set_transition(const HiddenMarkovModels::matrix& transition)
 {
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(transition));
 
+  _transition = transition;
   for (int i = 0; i < transition.size1(); i++)
     {
-      row(_transition, i) = row(transition, i)/sum(row(transition, i));
+      row(_transition, i) = row(transition, i)/sum(row(transition, i)); // normalization for stochasticity
     }
 }
 
@@ -58,9 +37,10 @@ void HiddenMarkovModels::HMM::set_emission(const HiddenMarkovModels::matrix& emi
 {
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(emission));
 
+  _emission = emission;
   for (int i = 0; i < emission.size1(); i++)
     {
-      row(_emission, i) = row(emission, i)/sum(row(emission, i));
+      row(_emission, i) = row(emission, i)/sum(row(emission, i)); // normalization for stochasticity
     }
 }
       
@@ -68,17 +48,18 @@ void HiddenMarkovModels::HMM::set_pi(const HiddenMarkovModels::vector& pi)
 {
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_vector(pi));
   
-  _pi = pi/sum(pi);
+  _pi = pi;
+  _pi = pi/sum(pi); // normalization for stochasticity
 }
 
 int HiddenMarkovModels::HMM::get_nstates(void) const
 {
-  return _nstates;
+  return  _pi.size();
 }
 
 int HiddenMarkovModels::HMM::get_nsymbols(void) const
 {
-  return _nsymbols;
+  return _emission.size2();
 }
 
 const HiddenMarkovModels::matrix& HiddenMarkovModels::HMM::get_transition(void) const
@@ -389,9 +370,9 @@ boost::tuple<HiddenMarkovModels::HMM, // the learned model
       relative_gain = (new_likelihood - likelihood)/abs(new_likelihood);
       BOOST_ASSERT(relative_gain >= 0); // if this fails, then something is terribly wrong with the implementation!
       std::cout << "\tRelative gain in likelihood: " << relative_gain << std::endl;
-      _transition = new_hmm.get_transition();
-      _emission = new_hmm.get_emission();
-      _pi = new_hmm.get_pi();
+      set_transition(new_hmm.get_transition());
+      set_emission(new_hmm.get_emission());
+      set_pi(new_hmm.get_pi());
 
       // update likehood
       likelihood = new_likelihood;
