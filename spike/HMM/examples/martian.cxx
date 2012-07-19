@@ -1,46 +1,49 @@
-/*!<
-  \file martian.cpp
+/*!
+  \file martian.cxx
   \brief example usage of HMM library: a Martian learned basic English Language (vowels and consonants) 
   \author DOP (dohmatob elvis dopgima)
 */
 
-#include "HMM.hpp" // pull-in HiddenMarkovModels namespace, etc.
-#include "HMMBasicTypes.hpp"  // pull-in RealType, etc.
-#include "HMMUtils.hpp" // pull-in load_hmm_matrix, load_hmm_vector, etc.
+#include "DiscreteHMM.h" // pull-in HiddenMarkovModels namespace, etc.
+#include "HMMBasicTypes.h"  // pull-in RealType, etc.
+#include "HMMUtils.h" // pull-in load_hmm_matrix, load_hmm_vector, etc.
 #include <algorithm> // random_shuffle, etc.
 #include <ctype.h> //pull-in __toascii, etc.
 #include <stdio.h> // pull-in printf, etc.
 
 using namespace HiddenMarkovModels;
 
+/*!
+  Main entry point.
+*/
 int main(int argc, const char *argv[])
 {
   // prepare data
   // XXX refactor main into unittest cases
   std::cout << "Loadin: HMM parameters from files .." << std::endl;
-  matrix trans = load_hmm_matrix("data/corpus_transition.dat");
-  matrix em = load_hmm_matrix("data/corpus_emission.dat");
-  vector pi = load_hmm_vector("data/corpus_pi.dat");
+  RealMatrixType trans = load_hmm_matrix("data/corpus_transition.dat");
+  RealMatrixType em = load_hmm_matrix("data/corpus_emission.dat");
+  RealVectorType pi = load_hmm_vector("data/corpus_pi.dat");
   std::cout << "Done." << std::endl << std::endl;
 
   // initialize HMM object
-  HMM hmm(trans, em, pi);
+  DiscreteHMM hmm(trans, em, pi);
   std::cout << "HMM:" << std::endl << hmm;
 
   // prepare data
   std::cout << std::endl << "Loadin: english words from corpus file .." << std::endl;
-  std::vector<SequenceType> corpus = load_hmm_observations("data/corpus_words.dat"); // load
+  std::vector< ObservationSequenceType > corpus = load_hmm_observations("data/corpus_words.dat"); // load
   std::cout << "Done (loaded " << corpus.size() << " words)." << std::endl << std::endl;
 
   // draw a random sample
   int nlessons = 1000;
   std::cout << "Sampling " << nlessons << " words from corpus .." << std::endl;
   std::random_shuffle(corpus.begin(), corpus.end());
-  std::vector<SequenceType> lessons = std::vector<SequenceType>(corpus.begin(), corpus.begin()+nlessons%corpus.size());
+  std::vector< ObservationSequenceType > lessons = std::vector< ObservationSequenceType >(corpus.begin(), corpus.begin()+nlessons%corpus.size());
   std::cout << "Done." << std::endl << std::endl;
 
   // run Viterbi
-  boost::tuple<SequenceType,
+  boost::tuple<ObservationSequenceType,
 	       RealType
 	       > path = hmm.viterbi(lessons[2]);
 
@@ -51,12 +54,12 @@ int main(int argc, const char *argv[])
   hmm.baum_welch(lessons);
   std::cout << std::endl << "Final HMM:" << std::endl << hmm;
   std::cout << "Viterbi classification of the 26 symbols (cf. letters of the english alphabet):" << std::endl;
-  SequenceType seq(1);
+  ObservationSequenceType seq(1);
   unsigned int correction;
   for (int symbol = 0; symbol < 26; symbol++)
     {
       seq[0] = symbol;
-      boost::tuple<SequenceType,
+      boost::tuple<ObservationSequenceType,
 		   RealType
 		   > path = hmm.viterbi(seq);
 

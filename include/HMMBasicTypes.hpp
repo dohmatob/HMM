@@ -22,28 +22,28 @@ using namespace boost::assign;
 namespace HiddenMarkovModels
 {
   /*!
-    \typedef real_type
+    \typedef RealType
     \brief Internal representation of real numbers .
   */
-  typedef double real_type;   
+  typedef double RealType;   
 
   /*!
-    \typedef sequence_type
+    \typedef SequenceType
     \brief Internal representation of sequences.
   */
-  typedef std::vector<unsigned int> sequence_type;
+  typedef std::vector<unsigned int> SequenceType;
 
   /*!
     \typedef matrix
     \brief Internal representation of probability matrices.
   */
-  typedef ublas::matrix<real_type> matrix;
+  typedef ublas::matrix<RealType> matrix;
 
   /*!
     \typedef vector
     \brief Internal representation of probability vectors.
   */  
-  typedef ublas::vector<real_type> vector;
+  typedef ublas::vector<RealType> vector;
 }
 
 #endif // HMMBasicTypes_H
