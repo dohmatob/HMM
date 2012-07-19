@@ -124,9 +124,9 @@ namespace HiddenMarkovModels
 	@param obseq - the sequence of observations to be decoded
 	@return a tuple of the optimal hidden state path to have produced the observation, and its likelihood
      **/
-    boost::tuple<sequence_type, // optimal path
-      real_type // likelihood of path
-      > viterbi(const sequence_type &obseq);
+    boost::tuple<SequenceType, // optimal path
+      RealType // likelihood of path
+      > viterbi(const SequenceType &obseq);
     
     /**
        Method to to compute forward and backward parameters of the Baum-Welch algorithm.
@@ -137,9 +137,9 @@ namespace HiddenMarkovModels
     boost::tuple<matrix, // alpha-hat
 		 matrix, // beta-hat
 		 matrix, // gamma-hat
-		 boost::multi_array<real_type, 3>, // epsilon-hat
-		 real_type // likelihood
-		 > forward_backward(const sequence_type &obseq);
+		 boost::multi_array<RealType, 3>, // epsilon-hat
+		 RealType // likelihood
+		 > forward_backward(const SequenceType &obseq);
   
     /** 
 	Method to learn new model from old, using the Baum-Welch algorithm
@@ -148,8 +148,8 @@ namespace HiddenMarkovModels
 	@return a tuple of the learned model (HMM object) and the it likelihood
     **/
     boost::tuple<HMM, 
-		 real_type 
-		 > learn(const std::vector<sequence_type> &obseqs);
+		 RealType 
+		 > learn(const std::vector<SequenceType> &obseqs);
   
     /** 
 	The Baum-Welch algorithm for multiple observation sequences.
@@ -160,9 +160,9 @@ namespace HiddenMarkovModels
 	@return a tuple of the learned model (HMM object) and the it likelihood
      **/
     boost::tuple<HMM,
-		 real_type 
-		 > baum_welch(const std::vector<sequence_type> &obseqs, 
-			      real_type tolerance=1e-9, 
+		 RealType 
+		 > baum_welch(const std::vector<SequenceType> &obseqs, 
+			      RealType tolerance=1e-9, 
 			      unsigned int maxiter=200 
 			      );
   }; 
@@ -173,7 +173,7 @@ namespace HiddenMarkovModels
      @param cout - cout
      @param hmm - HMM object to be displayed
    **/
-  std::ostream &operator<<(std::ostream &cout, HMM &hmm);
+  std::ostream &operator<<(std::ostream &cout, const HMM &hmm);
  
   /**
      Function to load a matrix from a file.
@@ -191,7 +191,7 @@ namespace HiddenMarkovModels
   /** 
    * function to load a sequence of observations from a file
    **/
-  std::vector<sequence_type> load_hmm_observations(const char *filename);
+  std::vector<SequenceType> load_hmm_observations(const char *filename);
 }
 
 #endif // HMM_H

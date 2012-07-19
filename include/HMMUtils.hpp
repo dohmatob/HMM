@@ -12,12 +12,12 @@
 namespace HiddenMarkovModels
 {
   /*!
-    Overloading of operator<< for HiddenMarkovModels::sequence_type
+    Overloading of operator<< for HiddenMarkovModels::SequenceType
     
     \param cout - output stream to receive flux
     @param seq - sequence to be displayed
   */
-  std::ostream &operator<<(std::ostream &cout, sequence_type seq);
+  std::ostream &operator<<(std::ostream &cout, SequenceType seq);
 
   /*!
     Function to compute logarithm of vector.
@@ -58,7 +58,7 @@ namespace HiddenMarkovModels
      @return - a tuple of the index of which the max is attained, and the max itself
    **/
   boost::tuple<int,
-	       real_type
+	       RealType
 	       > argmax(vector &u);
 }
 

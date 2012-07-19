@@ -1,2 +1,5 @@
 add_executable(DiscreteHMM_constructor DiscreteHMM_constructor.cxx)
 target_link_libraries(DiscreteHMM_constructor HMM)
+
+add_executable(martian martian.cxx)
+target_link_libraries(martian HMM)

@@ -50,21 +50,21 @@ namespace HiddenMarkovModels
 
       \param transition probability matrix
     */
-    void set_transition(HiddenMarkovModels::RealMatrixType& transition);
+    void set_transition(const HiddenMarkovModels::RealMatrixType& transition);
 
     /*!
       Set emission matrix of model.
 
       \param emission probability matrix
     */
-    void set_emission(HiddenMarkovModels::RealMatrixType& emission);
+    void set_emission(const HiddenMarkovModels::RealMatrixType& emission);
 
     /*!
       Set initial distribution of hidden states of mode.
 
       \param pi probability vector
     */
-    void set_pi(HiddenMarkovModels::RealVectorType& pi);
+    void set_pi(const HiddenMarkovModels::RealVectorType& pi);
 
     /*!
       Retrieve number of hidden states in model.
@@ -100,7 +100,61 @@ namespace HiddenMarkovModels
       \return initial distribution of hidden states of model
     */
     const HiddenMarkovModels::RealVectorType& get_pi() const;
-  };
+
+    /*! 
+      Method to verify sanity of symbols (crucial, since symbols will be directly used as indices in emission matrix).
+      
+      \param i symbol to be checked for sanity
+      \return boolean (symbol is sane or insane)
+     **/
+    bool is_symbol(unsigned int i) const;
+    
+    /*!
+      The Viterbi algorithm.
+
+      \param obseq the sequence of observations to be decoded
+      \return a tuple of the optimal hidden state path to have produced the observation, and its likelihood
+    */
+    boost::tuple<ObservationSequenceType, // optimal path
+      RealType // likelihood of path
+      > viterbi(const HiddenMarkovModels::ObservationSequenceType &obseq);
+    
+    /*!
+      Method to to compute forward and backward parameters of the Baum-Welch algorithm.
+      
+      \param obseq a sequence of observations       
+      \return a tuple of (in technical jargon) alpha-hat, beta-hat, gamma-hat, and epsilon-hat
+    */
+    boost::tuple<RealMatrixType, // alpha-hat
+      RealMatrixType, // beta-hat
+      RealMatrixType, // gamma-hat
+      boost::multi_array< RealType, 3 >, // epsilon-hat
+      RealType // likelihood
+      > forward_backward(const ObservationSequenceType &obseq);
+    
+    /*! 
+	Method to learn new model from old, using the Baum-Welch algorithm
+	
+	\param obseqs observation sequences to learn from
+	\return a tuple of the learned model (HMM object) and the it likelihood
+    */
+    boost::tuple<DiscreteHMM, 
+      RealType 
+      > learn(const std::vector<ObservationSequenceType > &obseqs);
+    
+    /*! 
+      The Baum-Welch algorithm for multiple observation sequences.
+      
+      \param obseqs observation sequences to learn from
+      \param tolerance tolerance level for convergence
+      \param maxiter maximum number of iterations
+      \return a tuple of the learned model (HMM object) and the it likelihood
+    */
+    RealType baum_welch(const std::vector< ObservationSequenceType > &obseqs, 
+			RealType tolerance=1e-9, 
+			unsigned int maxiter=200 
+			);
+  }; 
 };
 
 #endif // DISCRETEHMM_H

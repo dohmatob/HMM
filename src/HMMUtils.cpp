@@ -6,7 +6,7 @@
 
 #include "HMMUtils.hpp"
 
-std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, sequence_type s)
+std::ostream &HiddenMarkovModels::operator<<(std::ostream &cout, SequenceType s)
 {
   cout << "[" << s.size() << "](";
   for (int i = 0; i < s.size(); i++)
@@ -48,11 +48,11 @@ HiddenMarkovModels::matrix HiddenMarkovModels::mlog(const HiddenMarkovModels::ma
 }
 
 boost::tuple<int, // index at which max is attained
-	     HiddenMarkovModels::real_type // max value
+	     HiddenMarkovModels::RealType // max value
 	     > HiddenMarkovModels::argmax(HiddenMarkovModels::vector &u)
 {
   int index = 0;
-  HiddenMarkovModels::real_type value = u(0);
+  HiddenMarkovModels::RealType value = u(0);
 
   for (int i = 0; i < u.size(); i++)
     {
