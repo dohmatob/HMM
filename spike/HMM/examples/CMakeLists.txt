@@ -1,0 +1,2 @@
+add_executable(DiscreteHMM_constructor DiscreteHMM_constructor.cxx)
+target_link_libraries(DiscreteHMM_constructor HMM)
