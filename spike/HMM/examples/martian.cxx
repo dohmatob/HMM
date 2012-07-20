@@ -1,6 +1,6 @@
 /*!
   \file martian.cxx
-  \brief example usage of HMM library: a Martian learned basic English Language (vowels and consonants) 
+  \brief Example usage of HMM library: a Martian learns basic English Language (vowels and consonants) 
   \author DOP (dohmatob elvis dopgima)
 */
 
