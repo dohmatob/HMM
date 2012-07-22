@@ -13,6 +13,13 @@ chdir to the root directory (containing this README), and type the commands:
 $ cmake .
 $ make 
 
+0.1 BUILD spike/HMM
+===================
+spike.HMM contains a 'experimental' versions of HMM. To build the spike/HMM, do
+$ cd spike/HMM
+$ cmake .
+$ make
+
 1. RUN
 ======
 Simply type:
