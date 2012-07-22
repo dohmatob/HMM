@@ -39,10 +39,22 @@ namespace HiddenMarkovModels
   typedef boost::numeric::ublas::matrix< RealType > RealMatrixType;
 
   /*!
+    \typedef IntSequenceType
+    \brief Internal representation of integral sequences.
+  */
+  typedef std::vector< int > IntSequenceType;
+
+  /*!
     \typedef ObservationSequenceType
     \brief Internal representation of observation sequences.
   */
-  typedef std::vector< int > ObservationSequenceType;
+  typedef HiddenMarkovModels::IntSequenceType ObservationSequenceType;
+
+  /*!
+    \typedef StateSequenceType
+    \brief Internal representation of hidden state sequence traversed.
+  */
+  typedef HiddenMarkovModels::IntSequenceType StateSequenceType;
 };
 
 #endif // HMMBASICTYPES_H

@@ -8,6 +8,7 @@
 */
 
 #include "HMMBasicTypes.h"
+#include "HMMPathType.h"
 
 namespace HiddenMarkovModels
 {
@@ -115,9 +116,7 @@ namespace HiddenMarkovModels
       \param obseq the sequence of observations to be decoded
       \return a tuple of the optimal hidden state path to have produced the observation, and its likelihood
     */
-    boost::tuple<ObservationSequenceType, // optimal path
-      RealType // likelihood of path
-      > viterbi(const HiddenMarkovModels::ObservationSequenceType &obseq);
+    HiddenMarkovModels::HMMPathType viterbi(const HiddenMarkovModels::ObservationSequenceType& obseq);
     
     /*!
       Method to to compute forward and backward parameters of the Baum-Welch algorithm.
@@ -125,12 +124,12 @@ namespace HiddenMarkovModels
       \param obseq a sequence of observations       
       \return a tuple of (in technical jargon) alpha-hat, beta-hat, gamma-hat, and epsilon-hat
     */
-    boost::tuple<RealMatrixType, // alpha-hat
-      RealMatrixType, // beta-hat
-      RealMatrixType, // gamma-hat
+    boost::tuple<HiddenMarkovModels::RealMatrixType, // alpha-hat
+      HiddenMarkovModels::RealMatrixType, // beta-hat
+      HiddenMarkovModels::RealMatrixType, // gamma-hat
       boost::multi_array< RealType, 3 >, // epsilon-hat
-      RealType // likelihood
-      > forward_backward(const ObservationSequenceType &obseq);
+      HiddenMarkovModels::RealType // likelihood
+      > forward_backward(const HiddenMarkovModels::ObservationSequenceType &obseq);
     
     /*! 
 	Method to learn new model from old, using the Baum-Welch algorithm
@@ -138,9 +137,9 @@ namespace HiddenMarkovModels
 	\param obseqs observation sequences to learn from
 	\return a tuple of the learned model (HMM object) and the it likelihood
     */
-    boost::tuple<DiscreteHMM, 
-      RealType 
-      > learn(const std::vector<ObservationSequenceType > &obseqs);
+    boost::tuple<HiddenMarkovModels::DiscreteHMM, 
+      HiddenMarkovModels::RealType 
+      > learn(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs);
     
     /*! 
       The Baum-Welch algorithm for multiple observation sequences.
@@ -150,10 +149,10 @@ namespace HiddenMarkovModels
       \param maxiter maximum number of iterations
       \return a tuple of the learned model (HMM object) and the it likelihood
     */
-    RealType baum_welch(const std::vector< ObservationSequenceType > &obseqs, 
-			RealType tolerance=1e-9, 
-			unsigned int maxiter=200 
-			);
+    HiddenMarkovModels::RealType baum_welch(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs, 
+					    HiddenMarkovModels::RealType tolerance=1e-9, 
+					    unsigned int maxiter=200 
+					    );
   }; 
 };
 
