@@ -7,6 +7,7 @@
 #include "DiscreteHMM.h" // pull-in HiddenMarkovModels namespace, etc.
 #include "HMMBasicTypes.h"  // pull-in RealType, etc.
 #include "HMMUtils.h" // pull-in load_hmm_matrix, load_hmm_vector, etc.
+#include "HMMPathType.h"
 #include <algorithm> // random_shuffle, etc.
 #include <ctype.h> //pull-in __toascii, etc.
 #include <stdio.h> // pull-in printf, etc.
@@ -43,12 +44,10 @@ int main(int argc, const char *argv[])
   std::cout << "Done." << std::endl << std::endl;
 
   // run Viterbi
-  boost::tuple<ObservationSequenceType,
-	       RealType
-	       > path = hmm.viterbi(lessons[2]);
+  HMMPathType optimal = hmm.viterbi(lessons[2]);
 
-  std::cout << "The a posteriori most probable sequence of hidden states that generated the trace " << lessons[2] << " is " << boost::get<0>(path) << "." << std::endl;
-  std::cout << "Its (log) likelihood is " << boost::get<1>(path) << ".\n" << std::endl;
+  std::cout << "The a posteriori most probable sequence of hidden states that generated the trace " << lessons[2] << " is " << optimal.get_path() << "." << std::endl;
+  std::cout << "Its (log) likelihood is " << optimal.get_likelihood() << ".\n" << std::endl;
 
   // run Bauw-Welch
   hmm.baum_welch(lessons);
@@ -59,11 +58,9 @@ int main(int argc, const char *argv[])
   for (int symbol = 0; symbol < 26; symbol++)
     {
       seq[0] = symbol;
-      boost::tuple<ObservationSequenceType,
-		   RealType
-		   > path = hmm.viterbi(seq);
+      HMMPathType trajectory = hmm.viterbi(seq);
 
-      unsigned int which = boost::get<0>(path)[0]; // vowel or consonant ?
+      unsigned int which = trajectory.get_path()[0]; // vowel or consonant ?
 
       // let's call letter A's cluster "vowel" and call the other cluster "consonant"
       correction = symbol ? correction : which;

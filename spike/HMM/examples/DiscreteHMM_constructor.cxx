@@ -6,6 +6,7 @@
 
 #include "DiscreteHMM.h"
 #include "HMMUtils.h"
+#include "HMMPathType.h"
 
 using namespace HiddenMarkovModels;
 
