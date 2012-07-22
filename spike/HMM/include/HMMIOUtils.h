@@ -8,6 +8,8 @@
 */
 
 #include "DiscreteHMM.h"
+#include <fstream>
+#include <iostream> // for std::ostream, etc.
 
 namespace HiddenMarkovModels
 {

@@ -13,8 +13,6 @@
 #include <boost/numeric/ublas/io.hpp> // so we may display matrices, vectors, etc.
 #include <vector>
 #include <boost/tuple/tuple.hpp>
-#include <fstream>
-#include <iostream> // for std::ostream, etc.
 
 /*!
   \namespace HiddenMarkovModels
