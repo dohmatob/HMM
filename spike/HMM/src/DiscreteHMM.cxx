@@ -19,6 +19,7 @@ HiddenMarkovModels::DiscreteHMM::DiscreteHMM(HiddenMarkovModels::RealMatrixType&
   BOOST_ASSERT(transition.size1() == transition.size2()); // transition matrix should be square
   BOOST_ASSERT(pi.size() == transition.size1()); // transition matrix should have as many rows as there are hidden states in the model
   BOOST_ASSERT(transition.size1() == emission.size1()); // transition and emission matrices should have same number of rows
+
   // initialize model parameters proper
   set_transition(transition);
   set_emission(emission);
