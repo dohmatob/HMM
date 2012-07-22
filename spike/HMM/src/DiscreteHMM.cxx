@@ -6,6 +6,7 @@
 
 #include "DiscreteHMM.h"
 #include "HMMUtils.h"
+#include "HMMPathType.h"
 #include <boost/assert.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp> // for constructing matrix proxies like, row, column, etc.
 
@@ -86,9 +87,7 @@ bool HiddenMarkovModels::DiscreteHMM::is_symbol(unsigned int i) const
   return 0 <= i && i < get_nsymbols();
 }
 
-boost::tuple<HiddenMarkovModels::ObservationSequenceType, // optimal path
-	     HiddenMarkovModels::RealType // likelihood of path
-	     > HiddenMarkovModels::DiscreteHMM::viterbi(const HiddenMarkovModels::ObservationSequenceType &obseq)
+HiddenMarkovModels::HMMPathType HiddenMarkovModels::DiscreteHMM::viterbi(const HiddenMarkovModels::ObservationSequenceType& obseq)
 {
   // variables
   int T = obseq.size();
@@ -141,7 +140,7 @@ boost::tuple<HiddenMarkovModels::ObservationSequenceType, // optimal path
       hiddenseq[time] = state;
     }
 
-  return boost::make_tuple(hiddenseq, likelihood);
+  return HiddenMarkovModels::HMMPathType(hiddenseq, likelihood);
 }
 
 boost::tuple<HiddenMarkovModels::RealMatrixType, // alpha-hat
