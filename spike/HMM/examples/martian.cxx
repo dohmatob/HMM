@@ -4,10 +4,7 @@
   \author DOP (dohmatob elvis dopgima)
 */
 
-#include "DiscreteHMM.h" // pull-in HiddenMarkovModels namespace, etc.
-#include "HMMBasicTypes.h"  // pull-in RealType, etc.
-#include "HMMUtils.h" // pull-in load_hmm_matrix, load_hmm_vector, etc.
-#include "HMMPathType.h"
+#include "HiddenMarkovModelsNamespace.h" // pull-in API
 #include <algorithm> // random_shuffle, etc.
 #include <ctype.h> //pull-in __toascii, etc.
 #include <stdio.h> // pull-in printf, etc.
