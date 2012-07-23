@@ -3,3 +3,16 @@ target_link_libraries(DiscreteHMM_constructor HMM)
 
 add_executable(martian martian.cxx)
 target_link_libraries(martian HMM)
+
+add_executable(viterbi viterbi.cxx)
+target_link_libraries(viterbi HMM)
+
+add_executable(baumwelch baumwelch.cxx)
+target_link_libraries(baumwelch HMM)
+
+add_executable(multiple_sequence_baumwelch multiple_sequence_baumwelch.cxx)
+target_link_libraries(multiple_sequence_baumwelch HMM)
+
+add_executable(multiple_sequence_baumwelch2 multiple_sequence_baumwelch2.cxx)
+target_link_libraries(multiple_sequence_baumwelch2 HMM)
+
