@@ -32,7 +32,9 @@ void HiddenMarkovModels::DiscreteHMM::set_transition(const HiddenMarkovModels::R
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(transition));
 
   _transition = transition;
-  for (int i = 0; i < get_nstates(); i++)
+
+  // normalization for stochasticity
+  for (int i = 0; i < _transition.size1(); i++)
     {
       row(_transition, i) /= sum(row(_transition, i));
     }
@@ -43,7 +45,9 @@ void HiddenMarkovModels::DiscreteHMM::set_emission(const HiddenMarkovModels::Rea
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(emission));
 
   _emission = emission;
-  for (int i = 0; i < get_nstates(); i++)
+
+  // normalization for stochasticity
+  for (int i = 0; i < _emission.size1(); i++)
     {
       row(_emission, i) /= sum(row(_emission, i));
     }
@@ -54,6 +58,8 @@ void HiddenMarkovModels::DiscreteHMM::set_pi(const HiddenMarkovModels::RealVecto
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_vector(pi));
 
   _pi = pi;
+
+  // normalization for stochasticity
   _pi /= sum(_pi);
 }
 
@@ -96,7 +102,7 @@ HiddenMarkovModels::HMMPathType HiddenMarkovModels::DiscreteHMM::viterbi(const H
   HiddenMarkovModels::RealMatrixType delta(T, get_nstates());
   ublas::matrix<int> phi(T, get_nstates());
 
-  // logarithms, so we don't suffer underflow!
+  // take logarithms, so we don't suffer underflow!
   HiddenMarkovModels::RealMatrixType logtransition = HiddenMarkovModels::mlog(_transition);
   HiddenMarkovModels::RealMatrixType logemission = HiddenMarkovModels::mlog(_emission);
   HiddenMarkovModels::RealVectorType logpi = HiddenMarkovModels::vlog(_pi);
@@ -124,7 +130,7 @@ HiddenMarkovModels::HMMPathType HiddenMarkovModels::DiscreteHMM::viterbi(const H
 	}
     }
 
-  // set last node on optimal path
+  // set last node of optimal path
   HiddenMarkovModels::RealVectorType tmp = row(delta, T-1);
   boost::tuple<int,
 	       HiddenMarkovModels::RealType
@@ -249,6 +255,8 @@ boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
   // process all observations (assumed to be independent!)
   for (int k = 0; k < obseqs.size(); k++)
     {
+      std::cout << ".";
+
       // length of observation
       int T = obseqs[k].size();
 
@@ -320,7 +328,7 @@ boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
 
 HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baum_welch(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs,
 									 HiddenMarkovModels::RealType tolerance,
-									 unsigned int maxiter
+									 int maxiter
 									 )
 {
   // intializations
@@ -328,19 +336,19 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baum_welch(const s
   HiddenMarkovModels::RealType likelihood = -1*std::numeric_limits< HiddenMarkovModels::RealType >::max(); // minus infinity
   HiddenMarkovModels::RealType relative_gain = 0;
 
+  std::cout << "Starting Baum-Welch algorithm on a pool of " << obseqs.size() << " observation sequence(s)" << std::endl;
+
   // main loop
   while (true)
     {
       // done ?
-      if (iteration > maxiter)
+      if (0 <= maxiter && maxiter <= iteration)
 	{
-	  std::cout << "OUT OF COMPUTATION BUDGET" << std::endl;
+	  std::cout << std::endl << "Model did not converge after " << iteration << " iteration(s)." << std::endl;
 	  break;
 	}
 
-      std::cout << std::endl;
-      std::cout << "Iteration: " << iteration << std::endl;
-      iteration++;
+	iteration++;
 
       // learn
       boost::tuple<HiddenMarkovModels::DiscreteHMM,
@@ -348,19 +356,17 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baum_welch(const s
 		   > learned_hmm = learn(obseqs);
       DiscreteHMM new_hmm = boost::get<0>(learned_hmm);
       RealType new_likelihood = boost::get<1>(learned_hmm); 
-      std::cout << "\tLikelihood: " << new_likelihood << std::endl;
-
+   
       // converged ?
-      if (new_likelihood == 0.0)
+      if (new_likelihood == 0)
 	{
-	  std::cout << "\tCONVERGED." << std::endl;
+	  std::cout << std::endl << "Converged (to global optimum!) after " << iteration << " iteration(s)." << std::endl;
 	  break;
 	}
 
       // update this model
       relative_gain = (new_likelihood - likelihood)/abs(new_likelihood);
       BOOST_ASSERT(relative_gain >= 0); // if this fails, then something is terribly wrong with the implementation!
-      std::cout << "\tRelative gain in likelihood: " << relative_gain << std::endl;
       set_transition(new_hmm.get_transition());
       set_emission(new_hmm.get_emission());
       set_pi(new_hmm.get_pi());
@@ -371,10 +377,14 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baum_welch(const s
       // converged ?
       if (relative_gain < tolerance)
 	{
-	  std::cout << "\tCONVERGED (tolerance was set to " << tolerance << ")." << std::endl;
+	  std::cout << std::endl << "Converged after " << iteration << " iteration(s) (tolerance was set to " << tolerance << ")." << std::endl;
 	  break;
 	}
     }
+
+  std::cout << "Final: " << std::endl << *this << std::endl;
+  std::cout << "Likelihood: " << likelihood << std::endl;
+  std::cout << "Relative gain in likelihood over last iteration: " << relative_gain << std::endl;
 
   return likelihood;
 }

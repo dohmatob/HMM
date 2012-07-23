@@ -40,15 +40,8 @@ int main(int argc, const char *argv[])
   std::vector< ObservationSequenceType > lessons = std::vector< ObservationSequenceType >(corpus.begin(), corpus.begin()+nlessons%corpus.size());
   std::cout << "Done." << std::endl << std::endl;
 
-  // run Viterbi
-  HMMPathType optimal = hmm.viterbi(lessons[2]);
-
-  std::cout << "The a posteriori most probable sequence of hidden states that generated the trace " << lessons[2] << " is " << optimal.get_path() << "." << std::endl;
-  std::cout << "Its (log) likelihood is " << optimal.get_likelihood() << ".\n" << std::endl;
-
   // run Bauw-Welch
   hmm.baum_welch(lessons);
-  std::cout << std::endl << "Final HMM:" << std::endl << hmm;
   std::cout << "Viterbi classification of the 26 symbols (cf. letters of the english alphabet):" << std::endl;
   ObservationSequenceType seq(1);
   unsigned int correction;

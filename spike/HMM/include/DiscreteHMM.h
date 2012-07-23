@@ -5,6 +5,8 @@
   \file DiscreteHMM.h
   \brief Definition of DiscreteHMM class.
   \author DOP (dohmatob elvis dopgima)
+  \warning I expect dynamically allocated/deallocated types like HiddenMarkovModels::HMMMatrixType, HiddenMarkovModels::HMMMVectorType, be wrapped in 'smart pointers' by client code (to avoid dangling pointers, etc.). I've tried my best not to corrupt such data whose reference is passed to my code (class constructors, etc.).
+
 */
 
 #include "HMMBasicTypes.h"
@@ -146,12 +148,12 @@ namespace HiddenMarkovModels
       
       \param obseqs observation sequences to learn from
       \param tolerance tolerance level for convergence
-      \param maxiter maximum number of iterations
-      \return a tuple of the learned model (HMM object) and the it likelihood
+      \param maxiter maximum number of iterations (-ve means boundless)
+      \return likelihood of final model
     */
     HiddenMarkovModels::RealType baum_welch(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs, 
 					    HiddenMarkovModels::RealType tolerance=1e-9, 
-					    unsigned int maxiter=200 
+					    int maxiter=-1
 					    );
   }; 
 };
