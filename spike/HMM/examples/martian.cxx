@@ -41,7 +41,7 @@ int main(int argc, const char *argv[])
   std::cout << "Done." << std::endl << std::endl;
 
   // run Bauw-Welch
-  hmm.baum_welch(lessons);
+  hmm.baumwelch(lessons);
   std::cout << "Viterbi classification of the 26 symbols (cf. letters of the english alphabet):" << std::endl;
   ObservationSequenceType seq(1);
   unsigned int correction;

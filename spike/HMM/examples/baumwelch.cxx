@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   obseqs += obseq; // obseqs = pool of 1 observation sequence 'abbaa'
 
   // run Baum-Welch algorithm
-  dhmm.baum_welch(obseqs,
+  dhmm.baumwelch(obseqs,
 		  1e-15, // tolerance for convergence
 		  150 // maxiter
 		  );

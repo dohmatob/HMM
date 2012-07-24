@@ -16,6 +16,8 @@ bool HiddenMarkovModels::is_stochastic_vector(const HiddenMarkovModels::RealVect
 	}
     }
 
+  // XXX check whether sum(v) is 1 
+
   return true;
 }
 

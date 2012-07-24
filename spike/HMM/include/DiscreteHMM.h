@@ -103,7 +103,7 @@ namespace HiddenMarkovModels
       \return initial distribution of hidden states of model
     */
     const RealVectorType& get_pi() const;
-    
+
     /*! 
       Method to verify sanity of symbols (crucial, since symbols will be directly used as indices in emission matrix).
       
