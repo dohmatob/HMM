@@ -24,17 +24,17 @@ namespace HiddenMarkovModels
     /*! 
       Transition matrix of model .
     */
-    HiddenMarkovModels::RealMatrixType _transition; 
+    RealMatrixType _transition; 
 
     /*!
       Emission matrix of model.
     */
-    HiddenMarkovModels::RealMatrixType _emission;
+    RealMatrixType _emission;
 
     /*!
       Initial distribution of hidden states of model.
     */
-    HiddenMarkovModels::RealVectorType _pi;
+    RealVectorType _pi;
 
   public:
     /*!
@@ -44,30 +44,30 @@ namespace HiddenMarkovModels
       \param emission probability matrix
       \param pi initial probability vector
     */
-    DiscreteHMM(HiddenMarkovModels::RealMatrixType& transition, 
-		HiddenMarkovModels::RealMatrixType& emission,
-		HiddenMarkovModels::RealVectorType& pi);
+    DiscreteHMM(RealMatrixType& transition, 
+		RealMatrixType& emission,
+		RealVectorType& pi);
 
     /*!
       Set transition matrix of model.
 
       \param transition probability matrix
     */
-    void set_transition(const HiddenMarkovModels::RealMatrixType& transition);
+    void set_transition(const RealMatrixType& transition);
 
     /*!
       Set emission matrix of model.
 
       \param emission probability matrix
     */
-    void set_emission(const HiddenMarkovModels::RealMatrixType& emission);
+    void set_emission(const RealMatrixType& emission);
 
     /*!
       Set initial distribution of hidden states of mode.
 
       \param pi probability vector
     */
-    void set_pi(const HiddenMarkovModels::RealVectorType& pi);
+    void set_pi(const RealVectorType& pi);
 
     /*!
       Retrieve number of hidden states in model.
@@ -88,21 +88,21 @@ namespace HiddenMarkovModels
 
       \return transition matrix of model
     */
-    const HiddenMarkovModels::RealMatrixType& get_transition() const;
+    const RealMatrixType& get_transition() const;
 
     /*!
       Retrieve emission matrix of model.
 
       \return emission matrix of model
     */
-    const HiddenMarkovModels::RealMatrixType& get_emission() const;
+    const RealMatrixType& get_emission() const;
 
     /*!
       Retrieve initial distribution of hidden states of model.
 
       \return initial distribution of hidden states of model
     */
-    const HiddenMarkovModels::RealVectorType& get_pi() const;
+    const RealVectorType& get_pi() const;
 
     /*! 
       Method to verify sanity of symbols (crucial, since symbols will be directly used as indices in emission matrix).
@@ -118,7 +118,7 @@ namespace HiddenMarkovModels
       \param obseq the sequence of observations to be decoded
       \return a tuple of the optimal hidden state path to have produced the observation, and its likelihood
     */
-    HiddenMarkovModels::HMMPathType viterbi(const HiddenMarkovModels::ObservationSequenceType& obseq);
+    HMMPathType viterbi(const ObservationSequenceType& obseq);
     
     /*!
       Method to to compute forward and backward parameters of the Baum-Welch algorithm.
@@ -126,12 +126,12 @@ namespace HiddenMarkovModels
       \param obseq a sequence of observations       
       \return a tuple of (in technical jargon) alpha-hat, beta-hat, gamma-hat, and epsilon-hat
     */
-    boost::tuple<HiddenMarkovModels::RealMatrixType, // alpha-hat
-      HiddenMarkovModels::RealMatrixType, // beta-hat
-      HiddenMarkovModels::RealMatrixType, // gamma-hat
+    boost::tuple<RealMatrixType, // alpha-hat
+      RealMatrixType, // beta-hat
+      RealMatrixType, // gamma-hat
       boost::multi_array< RealType, 3 >, // epsilon-hat
-      HiddenMarkovModels::RealType // likelihood
-      > forward_backward(const HiddenMarkovModels::ObservationSequenceType &obseq);
+      RealType // likelihood
+      > forward_backward(const ObservationSequenceType &obseq);
     
     /*! 
 	Method to learn new model from old, using the Baum-Welch algorithm
@@ -139,9 +139,9 @@ namespace HiddenMarkovModels
 	\param obseqs observation sequences to learn from
 	\return a tuple of the learned model (HMM object) and the it likelihood
     */
-    boost::tuple<HiddenMarkovModels::DiscreteHMM, 
-      HiddenMarkovModels::RealType 
-      > learn(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs);
+    boost::tuple<DiscreteHMM, 
+      RealType 
+      > learn(const std::vector< ObservationSequenceType > &obseqs);
     
     /*! 
       The Baum-Welch algorithm for multiple observation sequences.
@@ -151,8 +151,8 @@ namespace HiddenMarkovModels
       \param maxiter maximum number of iterations (-ve means boundless)
       \return likelihood of final model
     */
-    HiddenMarkovModels::RealType baum_welch(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs, 
-					    HiddenMarkovModels::RealType tolerance=1e-9, 
+    RealType baumwelch(const std::vector< ObservationSequenceType > &obseqs, 
+					    RealType tolerance=1e-9, 
 					    int maxiter=-1
 					    );
   }; 

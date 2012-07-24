@@ -13,10 +13,10 @@
 namespace HiddenMarkovModels
 {
   /*!
-    Checks a vector for stochasticity (i.e. all coordinates are nonnegative and sum is nonzero).
+    Checks a vector for stochasticity (i.e. all coordinates are nonnegative and sum is 1).
 
     \param v input vector
-    \return true if vector is indeen stochastic, false otherwise
+    \return true if vector is indeed stochastic, false otherwise
   */
   bool is_stochastic_vector(const HiddenMarkovModels::RealVectorType& v);
 
@@ -24,7 +24,7 @@ namespace HiddenMarkovModels
     Checks a matrix for stochasticiy (i.e. all rows are stochastic).
 
     \param m input matrix
-    \return true if matrix is indeen stochastic, false otherwise
+    \return true if matrix is indeed stochastic, false otherwise
   */
   bool is_stochastic_matrix(const HiddenMarkovModels::RealMatrixType& m);
 
