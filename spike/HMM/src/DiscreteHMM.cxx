@@ -32,12 +32,6 @@ void HiddenMarkovModels::DiscreteHMM::set_transition(const HiddenMarkovModels::R
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(transition));
 
   _transition = transition;
-
-  // normalization for stochasticity
-  for (int i = 0; i < _transition.size1(); i++)
-    {
-      row(_transition, i) /= sum(row(_transition, i));
-    }
 }
 
 void HiddenMarkovModels::DiscreteHMM::set_emission(const HiddenMarkovModels::RealMatrixType& emission)
@@ -45,12 +39,6 @@ void HiddenMarkovModels::DiscreteHMM::set_emission(const HiddenMarkovModels::Rea
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_matrix(emission));
 
   _emission = emission;
-
-  // normalization for stochasticity
-  for (int i = 0; i < _emission.size1(); i++)
-    {
-      row(_emission, i) /= sum(row(_emission, i));
-    }
 }
 
 void HiddenMarkovModels::DiscreteHMM::set_pi(const HiddenMarkovModels::RealVectorType& pi)
@@ -58,9 +46,6 @@ void HiddenMarkovModels::DiscreteHMM::set_pi(const HiddenMarkovModels::RealVecto
   BOOST_ASSERT(HiddenMarkovModels::is_stochastic_vector(pi));
 
   _pi = pi;
-
-  // normalization for stochasticity
-  _pi /= sum(_pi);
 }
 
 int HiddenMarkovModels::DiscreteHMM::get_nstates() const
@@ -326,7 +311,7 @@ boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
   return boost::make_tuple(HiddenMarkovModels::DiscreteHMM(A, B, pi), likelihood);
 }
 
-HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baum_welch(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs,
+HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baumwelch(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs,
 									 HiddenMarkovModels::RealType tolerance,
 									 int maxiter
 									 )
