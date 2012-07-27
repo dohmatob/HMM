@@ -99,7 +99,7 @@ namespace HiddenMarkovModels
 
     /*!
       Retrieve initial distribution of hidden states of model.
-
+      
       \return initial distribution of hidden states of model
     */
     const RealVectorType& get_pi() const;
@@ -114,7 +114,7 @@ namespace HiddenMarkovModels
     
     /*!
       The Viterbi algorithm.
-
+      
       \param obseq the sequence of observations to be decoded
       \return a tuple of the optimal hidden state path to have produced the observation, and its likelihood
     */
@@ -141,7 +141,7 @@ namespace HiddenMarkovModels
     */
     boost::tuple<DiscreteHMM, 
       RealType 
-      > learn(const std::vector< ObservationSequenceType > &obseqs);
+      > learn(const std::vector<ObservationSequenceType > &obseqs);
     
     /*! 
       The Baum-Welch algorithm for multiple observation sequences.
@@ -151,10 +151,10 @@ namespace HiddenMarkovModels
       \param maxiter maximum number of iterations (-ve means boundless)
       \return likelihood of final model
     */
-    RealType baumwelch(const std::vector< ObservationSequenceType > &obseqs, 
-					    RealType tolerance=1e-9, 
-					    int maxiter=-1
-					    );
+    RealType baum_welch(const std::vector<ObservationSequenceType > &obseqs, 
+			RealType tolerance=1e-9, 
+			int maxiter=-1
+			);
   }; 
 };
 
