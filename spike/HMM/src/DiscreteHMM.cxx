@@ -9,6 +9,7 @@
 #include "HMMPathType.h"
 #include <boost/assert.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp> // for constructing matrix proxies like, row, column, etc.
+#include "ProgressBar.h"
 
 namespace ublas = boost::numeric::ublas;
 
@@ -240,8 +241,6 @@ boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
   // process all observations (assumed to be independent!)
   for (int k = 0; k < obseqs.size(); k++)
     {
-      std::cout << ".";
-
       // length of observation
       int T = obseqs[k].size();
 
@@ -320,20 +319,22 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baumwelch(const st
   int iteration = 0;
   HiddenMarkovModels::RealType likelihood = -1*std::numeric_limits< HiddenMarkovModels::RealType >::max(); // minus infinity
   HiddenMarkovModels::RealType relative_gain = 0;
+  BeautifulThings::ProgressBar progressbar;
 
   std::cout << "Starting Baum-Welch algorithm on a pool of " << obseqs.size() << " observation sequence(s)" << std::endl;
 
   // main loop
   while (true)
     {
+      // update progress bar
+      progressbar.update(iteration, maxiter);
+
       // done ?
       if (0 <= maxiter && maxiter <= iteration)
 	{
 	  std::cout << std::endl << "Model did not converge after " << iteration << " iteration(s)." << std::endl;
 	  break;
 	}
-
-	iteration++;
 
       // learn
       boost::tuple<HiddenMarkovModels::DiscreteHMM,
@@ -345,6 +346,7 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baumwelch(const st
       // converged ?
       if (new_likelihood == 0)
 	{
+	  progressbar.update(maxiter, maxiter);
 	  std::cout << std::endl << "Converged (to global optimum!) after " << iteration << " iteration(s)." << std::endl;
 	  break;
 	}
@@ -362,9 +364,13 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baumwelch(const st
       // converged ?
       if (relative_gain < tolerance)
 	{
+	  progressbar.update(maxiter, maxiter);
 	  std::cout << std::endl << "Converged after " << iteration << " iteration(s) (tolerance was set to " << tolerance << ")." << std::endl;
 	  break;
 	}
+
+      // proceed with next iteration
+      iteration++;
     }
 
   std::cout << "Final: " << std::endl << *this << std::endl;
