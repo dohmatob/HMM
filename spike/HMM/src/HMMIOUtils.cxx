@@ -5,6 +5,7 @@
 */
 
 #include "HMMIOUtils.h"
+#include "ProgressBar.h"
 #include <fstream>
 
 std::ostream& HiddenMarkovModels::operator<<(std::ostream& cout, const HiddenMarkovModels::DiscreteHMM& dhmm)
@@ -93,14 +94,16 @@ std::vector< HiddenMarkovModels::ObservationSequenceType > HiddenMarkovModels::l
   std::vector<HiddenMarkovModels::ObservationSequenceType> obseqs;
   std::ifstream input(filename);
   std::string lineData;
+  BeautifulThings::ProgressBar progressbar;
   int wordcount = 0;
 
+  progressbar.update();
   while(std::getline(input, lineData))
     {
       int d;
       HiddenMarkovModels::ObservationSequenceType row;
       std::stringstream lineStream(lineData);
-
+      
       while (lineStream >> d)
 	row.push_back(d);
 
@@ -109,6 +112,8 @@ std::vector< HiddenMarkovModels::ObservationSequenceType > HiddenMarkovModels::l
 	  wordcount++;
 	  obseqs.push_back(row);
 	}
+
+      progressbar.update();
     }
 
   return obseqs;

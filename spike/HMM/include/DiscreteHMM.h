@@ -151,7 +151,7 @@ namespace HiddenMarkovModels
       \param maxiter maximum number of iterations (-ve means boundless)
       \return likelihood of final model
     */
-    RealType baum_welch(const std::vector<ObservationSequenceType > &obseqs, 
+    RealType baumwelch(const std::vector<ObservationSequenceType > &obseqs, 
 			RealType tolerance=1e-9, 
 			int maxiter=-1
 			);
