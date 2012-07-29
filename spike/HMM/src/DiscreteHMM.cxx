@@ -321,7 +321,7 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baumwelch(const st
   HiddenMarkovModels::RealType relative_gain = 0;
   BeautifulThings::ProgressBar progressbar;
 
-  std::cout << "Starting Baum-Welch algorithm on a pool of " << obseqs.size() << " observation sequence(s)" << std::endl;
+  std::cout << "Running Baum-Welch algorithm on a pool of " << obseqs.size() << " observation sequence(s) .." << std::endl;
 
   // main loop
   while (true)

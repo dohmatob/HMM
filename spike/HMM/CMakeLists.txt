@@ -13,6 +13,8 @@ option(BUILD_EXAMPLES "Build HMM usage examples (see Examples subdirectory)" ON)
 option(USE_OPENMP "Use OpenMP parallelization" ON)
 option(BUILD_DOC "Use Doxygen to build API documentation" OFF)
 
+add_definitions("-Wall")
+
 if(UNIX AND NOT WIN32)
   #-- set bin
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

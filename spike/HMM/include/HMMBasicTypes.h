@@ -42,7 +42,7 @@ namespace HiddenMarkovModels
     \typedef IntSequenceType
     \brief Internal representation of integral sequences.
   */
-  typedef std::vector< int > IntSequenceType;
+  typedef std::vector<unsigned int > IntSequenceType;
 
   /*!
     \typedef ObservationSequenceType
