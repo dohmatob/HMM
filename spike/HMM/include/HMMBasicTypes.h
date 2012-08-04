@@ -46,9 +46,15 @@ namespace HiddenMarkovModels
 
   /*!
     \typedef ObservationSequenceType
-    \brief Internal representation of observation sequences.
+    \brief Internal representation of an observation sequence.
   */
-  typedef HiddenMarkovModels::IntSequenceType ObservationSequenceType;
+  typedef IntSequenceType ObservationSequenceType;
+
+  /*!
+    \typedef ObservationSequencesType
+    \brief Internal representation of a pool of observation sequences.
+  */
+  typedef std::vector<ObservationSequenceType > ObservationSequencesType;
 
   /*!
     \typedef StateSequenceType
