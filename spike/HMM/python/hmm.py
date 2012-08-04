@@ -30,13 +30,18 @@ def is_stochastic(x):
         return numpy.all(tmp>=0)
 
 def almost_uniform_vector(size):
-    return normalize(numpy.ones(size, dtype='float64'))
+    noise = numpy.random.normal(loc=0,scale=0.001,size=size)
+
+    return normalize(numpy.ones(size, dtype='float64') + noise)
 
 def almost_uniform_matrix(n, m=None):
     if m is None:
         m = n
 
-    return normalize(numpy.ones((n,m), dtype='float64'))
+    noise = numpy.random.normal(loc=0,scale=0.001,size=n*m)
+    x = numpy.ones((n,m), dtype='float64')
+
+    return normalize(x + noise.reshape(x.shape))
     
 def chopper(filename):
     ifh = open(filename)
@@ -261,8 +266,10 @@ class DiscreteHMM:
     def viterbi_decode(self, obseq):
         T = len(obseq)
         hiddenseq = numpy.zeros(T);
-        delta = numpy.zeros((T,self.get_nstates())) # likelihoods of all paths (incomplete) presently under considderation
+        delta = numpy.zeros((T,self.get_nstates())) # likelihoods of all paths (incomplete) presently under consideration
         phi = numpy.zeros((T,self.get_nstates()))
+
+        # take logs of probability terms so we don't suffer underflow, etc.
         logtransition = numpy.log(self._transition)
         logemission = numpy.log(self._emission)
         logpi = numpy.log(self._pi)
@@ -318,10 +325,7 @@ class TestDiscreteHMM(unittest.TestCase):
     #     self.assertEqual(dhmm.get_nsymbols(), 3)
 
     def test_badass(self):
-        dhmm = DiscreteHMM(transition=numpy.loadtxt('data/corpus_transition.dat'), 
-                           emission=numpy.loadtxt('data/corpus_emission.dat'),
-                           pi=numpy.loadtxt('data/corpus_pi.dat'),
-                           )
+        dhmm = DiscreteHMM(nstates=2, nsymbols=26)
         lessons = list(chopper('data/corpus_words.dat'))
         numpy.random.shuffle(lessons)
         dhmm.learn(lessons[:500])
