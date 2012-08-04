@@ -1,7 +1,7 @@
 import numpy
 import unittest
 
-def normalize(x, dtype='double'):
+def normalize(x, dtype='float64'):
     assert x.ndim in [1,2] # vector or matrix
 
     x = x.astype(dtype)
@@ -21,16 +21,26 @@ def is_stochastic(x):
         return numpy.all(tmp>=0)
 
 def almost_uniform_vector(size):
-    return normalize(numpy.ones(size, dtype='double'))
+    return normalize(numpy.ones(size, dtype='float64'))
 
 def almost_uniform_matrix(n, m=None):
     if m is None:
         m = n
 
-    return normalize(numpy.ones((n,m), dtype='double'))
+    return normalize(numpy.ones((n,m), dtype='float64'))
     
+def chopper(filename):
+    ifh = open(filename)
+    while 0x1:
+        line = ifh.readline()
+        if not line:
+            break
+        yield [int(item) for item in line.rstrip('\r\n').split(' ')]
+    # ifh.close()
+
+
 class DiscreteHMM:
-    _REALTYPE = 'double'
+    _REALTYPE = 'float64'
 
     def __init__(self, nstates=None, nsymbols=None, transition=None, emission=None, pi=None):
         assert not ((nstates is None and transition is None and pi is None) or (nsymbols is None and emission is None))
@@ -136,7 +146,7 @@ class DiscreteHMM:
                     betatilde[reverse_time,i] = numpy.sum(self._transition[i,...]*self._emission[...,obseq[reverse_time+1]]*betahat[reverse_time+1,...])
             betahat[reverse_time,...] = scalers[reverse_time]*betatilde[reverse_time,...]
 
-        # compute epislon and gamma terms
+        # compute epsilon and gamma terms
         for time in xrange(T):
             gammahat[time,...] = alphahat[time,...]*betahat[time,...]/scalers[time]
             if time < T-1:
@@ -145,7 +155,7 @@ class DiscreteHMM:
                         epsilonhat[time,i,j] = alphahat[time,i]*self._transition[i,j]*self._emission[j,obseq[time+1]]*betahat[time+1,j]
 
         # compute likelihood
-        likelihood = -1*scalers.sum()
+        likelihood = -numpy.sum(numpy.log(scalers))
 
         # render results
         return {"alphahat":alphahat, "betahat":betahat, "gammahat":gammahat, "epsilonhat":epsilonhat, "likelihood":likelihood}
@@ -186,13 +196,12 @@ class DiscreteHMM:
                     if obseq[time] == j:
                         w[...,j] += fb.get('gammahat')[time,...]
 
-            # compute transition and emission probabilities
-            transition = u/numpy.repeat(v, u.shape[1], axis=0).reshape(u.shape)
-            emission = w/numpy.repeat(x, w.shape[1], axis=0).reshape(w.shape)
+        # compute transition and emission probabilities
+        transition = u/numpy.repeat(v, u.shape[1], axis=0).reshape(u.shape)
+        emission = w/numpy.repeat(x, w.shape[1], axis=0).reshape(w.shape)
 
-            # render results
-            return {'transition':transition, 'emission':emission, 'pi':pi, 'likelihood':likelihood}
-
+        # render results
+        return {'transition':transition, 'emission':emission, 'pi':pi, 'likelihood':likelihood}
 
     def learn(self,
               obseqs,
@@ -201,8 +210,11 @@ class DiscreteHMM:
               method='baumwelch'):
         iteration = 0
         likelihood = -numpy.inf
-        
+
         while True:
+            print "Iteration:", iteration
+            print "Current model:", str(self)
+
             # budget exhausted ?
             if maxiterations <= iteration:
                 print "Model did not converge after %d iterations."%iteration
@@ -211,39 +223,72 @@ class DiscreteHMM:
             # learn new model
             result = self.do_baumwelch(obseqs)
 
+            print "Model likelihood:", result.get('likelihood')
+
             # converged ?
             if result.get('likelihood') == 0:
                 print "Model converged (to global optimum) after %d iterations."%iteration
                 break
 
-            # update this model
+            # update model likelihood
             relative_gain = (result.get('likelihood') - likelihood)/numpy.abs(result.get('likelihood'))
-            assert relative_gain >= 0 # if this fails, then somethx is terribly wrong with the code!!!
+            likelihood = result.get('likelihood')
+            assert relative_gain >= 0, str(self) # if this fails, then somethx is terribly wrong with the code!!!
+
+            print "Relative gain in model likelihood over last iteration:", relative_gain
+            print 
+
+            # converged ?
+            if relative_gain < tolerance:
+                print "Model converged after %d iterations (tolerance was set to %s)."%(iteration,tolerance)
+                break
+
+            # update model
             self.set_transition(result.get('transition'))
             self.set_emission(result.get('emission'))
             self.set_pi(result.get('pi'))
 
-            # update likelihood
-            likelihood = result.get('likelihood')
-
-            # converged ?
-            if relative_gain < tolerance:
-                print "Model converged after %d iterations (tolerance was set to %lf)."%(iteration,tolerance)
-                break
-
-            # process with next iteration
+            # proceed with next iteration
             iteration += 1
 
-        print str(self)
-            
+    def viterbi_decode(self, obseq):
+        T = len(obseq)
+        hiddenseq = numpy.zeros(T);
+        delta = numpy.zeros((T,self.get_nstates())) # likelihoods of all paths (incomplete) presently under considderation
+        phi = numpy.zeros((T,self.get_nstates()))
+        logtransition = numpy.log(self._transition)
+        logemission = numpy.log(self._emission)
+        logpi = numpy.log(self._pi)
+
+        # compute stuff for time = 0
+        delta[0,...] = logpi + logemission[...,obseq[0]]
+        phi[0,...] = numpy.arange(self.get_nstates())
+        
+        # run Viterbi decoder proper
+        for time in xrange(1,T):
+            for j in xrange(self.get_nstates()):
+                tmp = delta[time-1,...] + logtransition[...,j]
+                x = numpy.argmax(tmp)
+                delta[time,j] = tmp[x] + logemission[j,obseq[time]]
+                phi[time,j] = x
+
+        # set last node of optimal path
+        hiddenseq[T-1] = numpy.argmax(delta[T-1,...])
+        likelihood = delta[T-1,hiddenseq[T-1]]
+        
+        # backtrack
+        for time in xrange(T-1):
+            reverse_time = T-2-time
+            hiddenseq[reverse_time] = phi[reverse_time+1,hiddenseq[reverse_time+1]]
+
+        # render results
+        return {'states':hiddenseq, 'likelihood':likelihood}
+
     def __dict__(self):
         return {'transition':self._transition, 'emission':self._emission, 'pi':self._pi}
 
     def __str__(self):
         return '%s'%self.__dict__
-
-        
-
     
 
 class TestDiscreteHMM(unittest.TestCase):
@@ -256,15 +301,46 @@ class TestDiscreteHMM(unittest.TestCase):
         self.assertEqual(dhmm.get_nsymbols(), 2)
 
         
-    def test_constructor_with_sizes(self):
-        dhmm = DiscreteHMM(pi=numpy.array([0.6, 0.4]), nsymbols=3)
-        self.assertTrue(is_stochastic(dhmm.get_transition()))
-        self.assertTrue(is_stochastic(dhmm.get_emission()))
-        self.assertTrue(is_stochastic(dhmm.get_pi()))
-        self.assertEqual(dhmm.get_nstates(), 2)
-        print dhmm.learn([[0,1,0,0,1,1]], maxiterations=100)
-        self.assertEqual(dhmm.get_nsymbols(), 3)
+    # def test_constructor_with_sizes(self):
+    #     dhmm = DiscreteHMM(pi=numpy.array([0.6, 0.4]), nsymbols=3)
+    #     self.assertTrue(is_stochastic(dhmm.get_transition()))
+    #     self.assertTrue(is_stochastic(dhmm.get_emission()))
+    #     self.assertTrue(is_stochastic(dhmm.get_pi()))
+    #     self.assertEqual(dhmm.get_nstates(), 2)
+    #     print dhmm.learn([[0,1,0,0,1,1]], maxiterations=1000)
+    #     self.assertEqual(dhmm.get_nsymbols(), 3)
+
+    # def test_badass(self):
+    #     dhmm = DiscreteHMM(transition=numpy.loadtxt('data/corpus_transition.dat'), 
+    #                        emission=numpy.loadtxt('data/corpus_emission.dat'),
+    #                        pi=numpy.loadtxt('data/corpus_pi.dat'),
+    #                        )
+    #     dhmm.learn(list(chopper('data/corpus_words.dat'))[:500], maxiterations=1000)
+
+        # dhmm = DiscreteHMM(transition=numpy.array([[0.45,0.35,0.20],[0.10,0.50,0.40],[0.15,0.25,0.60]], dtype='float64'),
+        #                   emission=numpy.array([[1,0],[0.5,0.5],[0,1]], dtype='float64'),
+        #                   pi=numpy.array([0.5, 0.3, 0.2], dtype='float64'),
+        #                   )
+          
+        # dhmm.learn([[0,1,1,0,0]], maxiterations=13)
+        # print str(dhmm)
+
+    def test_viterbi(self):
+        dhmm = DiscreteHMM(transition=numpy.array([[0.4,0.6],[0.6,0.4]]),
+                           emission=numpy.array([[0.67,0.33],[0.41,0.59]]),
+                           pi=numpy.array([0.75,0.25]),
+                           )
+
+        print dhmm.viterbi_decode([1,0,0,1,0,1])
+
+                           
 
 if __name__ == '__main__':
     unittest.main()
+
+
+
+
+
+
 
