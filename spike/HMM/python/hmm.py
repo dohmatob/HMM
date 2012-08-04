@@ -323,7 +323,7 @@ class TestDiscreteHMM(unittest.TestCase):
                            )
         lessons = list(chopper('data/corpus_words.dat'))
         numpy.random.shuffle(lessons)
-        dhmm.learn(lessons[:500], maxiterations=100)
+        dhmm.learn(lessons[:500], tolerance=1e-10)
 
         print 
         print 'Viterbi classification of 26 symbols (cf. letters of the English alphabet):'
