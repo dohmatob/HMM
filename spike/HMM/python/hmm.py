@@ -239,7 +239,7 @@ class DiscreteHMM:
             # update model likelihood
             relative_gain = (result.get('likelihood') - likelihood)/numpy.abs(result.get('likelihood'))
             likelihood = result.get('likelihood')
-            assert relative_gain >= 0, str(self) # if this fails, then somethx is terribly wrong with the code!!!
+            assert relative_gain >= 0 # if this fails, then somethx is terribly wrong with the code!!!
 
             print "Relative gain in model likelihood over last iteration:", relative_gain
             print 
