@@ -200,8 +200,8 @@ class DiscreteHMM:
             u += fb.get('epsilonhat').sum(axis=0)
             v += fb.get('gammahat')[0:T-1,...].sum(axis=0)
             x += fb.get('gammahat').sum(axis=0)
-            for j in xrange(xrange():
-                w[...,j] += fb.get('gammahat')[numpy.nonzero(numpy.array(obseq)==j),...].sum(axis=0) 
+            for j in xrange(self.get_nsymbols()):
+                w[...,j] += fb.get('gammahat')[numpy.nonzero(numpy.array(obseq)==j)[0],...].sum(axis=0) 
                 
         # compute transition and emission probabilities
         transition = u/numpy.repeat(v, u.shape[1], axis=0).reshape(u.shape)
