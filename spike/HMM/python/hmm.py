@@ -1,3 +1,13 @@
+# (C) DOP (dohmatob elvis dopgima)
+# Python module implementing Hidden Markov Models (discrete)
+#
+# Caution: This is just spiky code!!!
+#
+# TODO: 
+#     - Refactor the code
+#     - Documentation with sphinx
+#     - Profiling 
+
 import numpy
 import unittest
 
@@ -9,7 +19,6 @@ def normalize(x, dtype='float64'):
         return x/x.sum()
     else:
         return x/numpy.repeat(x.sum(axis=1), x.shape[1], axis=0).reshape(x.shape)
-
 
 def is_stochastic(x):
     assert x.ndim in [1, 2] # vector or matrix
@@ -282,7 +291,7 @@ class DiscreteHMM:
             hiddenseq[reverse_time] = phi[reverse_time+1,hiddenseq[reverse_time+1]]
 
         # render results
-        return {'states':hiddenseq, 'likelihood':likelihood}
+        return {'states':list(hiddenseq), 'likelihood':likelihood}
 
     def __dict__(self):
         return {'transition':self._transition, 'emission':self._emission, 'pi':self._pi}
@@ -310,12 +319,26 @@ class TestDiscreteHMM(unittest.TestCase):
     #     print dhmm.learn([[0,1,0,0,1,1]], maxiterations=1000)
     #     self.assertEqual(dhmm.get_nsymbols(), 3)
 
-    # def test_badass(self):
-    #     dhmm = DiscreteHMM(transition=numpy.loadtxt('data/corpus_transition.dat'), 
-    #                        emission=numpy.loadtxt('data/corpus_emission.dat'),
-    #                        pi=numpy.loadtxt('data/corpus_pi.dat'),
-    #                        )
-    #     dhmm.learn(list(chopper('data/corpus_words.dat'))[:500], maxiterations=1000)
+    def test_badass(self):
+        dhmm = DiscreteHMM(transition=numpy.loadtxt('data/corpus_transition.dat'), 
+                           emission=numpy.loadtxt('data/corpus_emission.dat'),
+                           pi=numpy.loadtxt('data/corpus_pi.dat'),
+                           )
+        lessons = list(chopper('data/corpus_words.dat'))
+        numpy.random.shuffle(lessons)
+        dhmm.learn(lessons[:500], maxiterations=100)
+
+        print 
+        print 'Viterbi classification of 26 symbols (cf. letters of the English alphabet):'
+        clusters = dict()
+        for i in xrange(26):
+            letter = chr(ord('A')+i)
+            class_label = dhmm.viterbi_decode([i]).get('states')[0]
+            if i == 0:
+                # 'a' is a vowel and 'a' is not a consonant
+                clusters[class_label] = 'vowel'
+                clusters[1-class_label] = 'consonant'
+            print '\t%s is a %s'%(letter,clusters[class_label])
 
         # dhmm = DiscreteHMM(transition=numpy.array([[0.45,0.35,0.20],[0.10,0.50,0.40],[0.15,0.25,0.60]], dtype='float64'),
         #                   emission=numpy.array([[1,0],[0.5,0.5],[0,1]], dtype='float64'),
@@ -331,10 +354,9 @@ class TestDiscreteHMM(unittest.TestCase):
                            pi=numpy.array([0.75,0.25]),
                            )
 
-        print dhmm.viterbi_decode([1,0,0,1,0,1])
+        self.assertEqual(dhmm.viterbi_decode([1,0,0,1,0,1]).get('states'), [0,1,0,1,0,1])
 
                            
-
 if __name__ == '__main__':
     unittest.main()
 
