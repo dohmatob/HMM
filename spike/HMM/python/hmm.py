@@ -212,7 +212,7 @@ class DiscreteHMM:
     def learn(self,
               obseqs,
               tolerance=1e-9,
-              maxiterations=100,
+              maxiterations=1000,
               method='baumwelch'):
         iteration = 0
         likelihood = -numpy.inf
