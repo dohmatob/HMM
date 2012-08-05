@@ -94,10 +94,7 @@ std::vector< HiddenMarkovModels::ObservationSequenceType > HiddenMarkovModels::l
   std::vector<HiddenMarkovModels::ObservationSequenceType> obseqs;
   std::ifstream input(filename);
   std::string lineData;
-  BeautifulThings::ProgressBar progressbar;
-  int wordcount = 0;
 
-  progressbar.update();
   while(std::getline(input, lineData))
     {
       int d;
@@ -109,11 +106,8 @@ std::vector< HiddenMarkovModels::ObservationSequenceType > HiddenMarkovModels::l
 
       if (row.size() > 0)
 	{
-	  wordcount++;
 	  obseqs.push_back(row);
 	}
-
-      progressbar.update();
     }
 
   return obseqs;

@@ -178,7 +178,10 @@ class DiscreteHMM:
         likelihood = 0 
 
         # initial distribution of learned model
-        pi = 0*self._pi 
+        pi = 0*self._pi
+
+        # number of observations altogether
+        L = 0
 
         # auxiliary tensors
         u = numpy.zeros(self._transition.shape) 
@@ -188,6 +191,8 @@ class DiscreteHMM:
 
         # we'll now process all the observations and learn a new model
         for obseq in obseqs:
+            L += 1
+
             # get length of observation sequence being processed
             T = len(obseq)
 
@@ -207,7 +212,8 @@ class DiscreteHMM:
             for j in xrange(self.get_nsymbols()):
                 w[...,j] += fb.get('gammahat')[numpy.nonzero(numpy.array(obseq)==j)[0],...].sum(axis=0) 
                 
-        # compute transition and emission probabilities
+        # compute learned model parameters
+        pi /= L
         transition = u/numpy.array([v,]*u.shape[1]).T
         emission = w/numpy.array([x,]*w.shape[1]).T
 
@@ -306,39 +312,45 @@ class DiscreteHMM:
     
 
 class TestDiscreteHMM(unittest.TestCase):
-    def test_constructor_with_matrices(self):
-        dhmm = DiscreteHMM(transition=numpy.mat([[0.6, 0.4],[0.3, 0.7]]), emission=numpy.mat([[1, 1],[2, 3]]), pi=numpy.array([5,6]))
-        self.assertTrue(is_stochastic(dhmm.get_transition()))
-        self.assertTrue(is_stochastic(dhmm.get_emission()))
-        self.assertTrue(is_stochastic(dhmm.get_pi()))
-        self.assertEqual(dhmm.get_nstates(), 2)
-        self.assertEqual(dhmm.get_nsymbols(), 2)
+    # def test_constructor_with_matrices(self):
+    #     dhmm = DiscreteHMM(transition=numpy.mat([[0.6, 0.4],[0.3, 0.7]]), emission=numpy.mat([[1, 1],[2, 3]]), pi=numpy.array([5,6]))
+    #     self.assertTrue(is_stochastic(dhmm.get_transition()))
+    #     self.assertTrue(is_stochastic(dhmm.get_emission()))
+    #     self.assertTrue(is_stochastic(dhmm.get_pi()))
+    #     self.assertEqual(dhmm.get_nstates(), 2)
+    #     self.assertEqual(dhmm.get_nsymbols(), 2)
         
-    def test_constructor_with_sizes(self):
-        dhmm = DiscreteHMM(pi=numpy.array([0.6, 0.4]), nsymbols=3)
-        self.assertTrue(is_stochastic(dhmm.get_transition()))
-        self.assertTrue(is_stochastic(dhmm.get_emission()))
-        self.assertTrue(is_stochastic(dhmm.get_pi()))
-        self.assertEqual(dhmm.get_nstates(), 2)
-        self.assertEqual(dhmm.get_nsymbols(), 3)
+    # def test_constructor_with_sizes(self):
+    #     dhmm = DiscreteHMM(pi=numpy.array([0.6, 0.4]), nsymbols=3)
+    #     self.assertTrue(is_stochastic(dhmm.get_transition()))
+    #     self.assertTrue(is_stochastic(dhmm.get_emission()))
+    #     self.assertTrue(is_stochastic(dhmm.get_pi()))
+    #     self.assertEqual(dhmm.get_nstates(), 2)
+    #     self.assertEqual(dhmm.get_nsymbols(), 3)
 
-    def test_badass(self):
-        dhmm = DiscreteHMM(transition=numpy.array([[0.45,0.35,0.20],[0.10,0.50,0.40],[0.15,0.25,0.60]], dtype='float64'),
-                          emission=numpy.array([[1,0],[0.5,0.5],[0,1]], dtype='float64'),
-                          pi=numpy.array([0.5, 0.3, 0.2], dtype='float64'),
-                          )
+    def test_learn(self):
+        dhmm = DiscreteHMM(transition=numpy.array([[0.5,0.5],[0.5,0.5]]),
+                           emission=numpy.array([[1,1,1],[1,1,1]], dtype='float64'),
+                           pi=numpy.array([0.6,0.4]),
+                           )
           
-        dhmm.learn([[0,1,1,0,0]])
-        print str(dhmm)
+        result = dhmm.do_baumwelch([[0,1,0,0,1,1]])
+        print result
+        dhmm.set_pi(result.get('pi'))
+        dhmm.set_transition(result.get('transition'))
+        dhmm.set_emission(result.get('emission'))
 
-    # def test_viterbi(self):
-    #     dhmm = DiscreteHMM(transition=numpy.array([[0.4,0.6],[0.6,0.4]]),
-    #                        emission=numpy.array([[0.67,0.33],[0.41,0.59]]),
-    #                        pi=numpy.array([0.75,0.25]),
-    #                        )
+        result = dhmm.forward_backward([0,1,0,0,1,1])
+        print result
+        
 
-    #     self.assertEqual(dhmm.viterbi_decode([1,0,0,1,0,1]).get('states'), [0,1,0,1,0,1])
+    # # def test_viterbi(self):
+    # #     dhmm = DiscreteHMM(transition=numpy.array([[0.4,0.6],[0.6,0.4]]),
+    # #                        emission=numpy.array([[0.67,0.33],[0.41,0.59]]),
+    # #                        pi=numpy.array([0.75,0.25]),
+    # #                        )
 
+    # #     self.assertEqual(dhmm.viterbi_decode([1,0,0,1,0,1]).get('states'), [0,1,0,1,0,1])
               
 def main():
     dhmm = DiscreteHMM(nstates=2, nsymbols=26)

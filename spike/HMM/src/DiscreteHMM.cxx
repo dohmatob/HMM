@@ -96,15 +96,15 @@ HiddenMarkovModels::HMMPathType HiddenMarkovModels::DiscreteHMM::viterbi(const H
   // compute stuff for time = 0
   BOOST_ASSERT(is_symbol(obseq[0]));
   row(delta,0) = logpi + column(logemission, obseq[0]);
-  for (int j = 0; j < get_nstates(); j++)
+  for(int j = 0; j < get_nstates(); j++)
     {
       phi(0,j) = j;
     }
 
   // run viterbi proper
-  for (int time = 1; time < T; time++)
+  for(int time = 1; time < T; time++)
     {
-      for (int j = 0; j < get_nstates(); j++)
+      for(int j = 0; j < get_nstates(); j++)
 	{
 	  HiddenMarkovModels::RealVectorType tmp = row(delta, time-1)+column(logtransition, j);
 	  boost::tuple<int,
@@ -126,7 +126,7 @@ HiddenMarkovModels::HMMPathType HiddenMarkovModels::DiscreteHMM::viterbi(const H
   hiddenseq[T-1] = state;
 
   // backtrack
-  for (int time = T-2; time >= 0; time--)
+  for(int time = T-2; time >= 0; time--)
     {
       state = phi(time+1, state);
       hiddenseq[time] = state;
@@ -155,16 +155,16 @@ boost::tuple<HiddenMarkovModels::RealMatrixType, // alpha-hat
   HiddenMarkovModels::RealType likelihood;
 
   // compute forward (alpha) variables
-  for (int time = 0; time < T; time++)
+  for(int time = 0; time < T; time++)
     {
       BOOST_ASSERT(is_symbol(obseq[time]));
-      if (time == 0)
+      if(time == 0)
 	{
 	  row(alphatilde, time) = element_prod(_pi, column(_emission, obseq[time]));
 	}
       else
 	{
-	  for (int i = 0; i < get_nstates(); i++)
+	  for(int i = 0; i < get_nstates(); i++)
 	    {
 	      alphatilde(time, i) = sum(element_prod(row(alphahat, time-1), column(_transition,i))) * _emission(i, obseq[time]);
 	    }
@@ -174,7 +174,7 @@ boost::tuple<HiddenMarkovModels::RealMatrixType, // alpha-hat
     }
 
   // compute backward (beta) parameters
-  for (int time = T-1; time >= 0; time--)
+  for(int time = T-1; time >= 0; time--)
     {
       if (time == T-1)
 	{
@@ -182,23 +182,23 @@ boost::tuple<HiddenMarkovModels::RealMatrixType, // alpha-hat
 	}
       else
 	{
-	  for (int i = 0; i < get_nstates(); i++)
+	  for(int i = 0; i < get_nstates(); i++)
 	    {
-	      betatilde(time, i) = norm_1(element_prod(element_prod(row(_transition, i), column(_emission, obseq[time+1])), row(betahat, time+1)));
+	      betatilde(time, i) = sum(element_prod(element_prod(row(_transition, i), column(_emission, obseq[time+1])), row(betahat, time+1)));
 	    }
 	}
       row(betahat, time) = scalers[time]*row(betatilde, time);
     }
 
   // compute epsilon and gamma terms
-  for (int time = 0; time < T; time++)
+  for(int time = 0; time < T; time++)
     {
       row(gammahat, time) = element_prod(row(alphahat, time), row(betahat, time))/scalers[time];
       if (time < T-1)
 	{
-	  for (int i = 0; i < get_nstates(); i++)
+	  for(int i = 0; i < get_nstates(); i++)
 	    {
-	      for (int j = 0; j < get_nstates(); j++)
+	      for(int j = 0; j < get_nstates(); j++)
 		{
 		  epsilonhat[time][i][j] = alphahat(time, i)*_transition(i, j)*_emission(j, obseq[time+1])*betahat(time+1, j);
 		}
@@ -209,7 +209,7 @@ boost::tuple<HiddenMarkovModels::RealMatrixType, // alpha-hat
   // compute likelihood
   likelihood = -1*sum(HiddenMarkovModels::vlog(scalers));
 
-  return boost::make_tuple(alphahat, betahat,gammahat, epsilonhat, likelihood);
+  return boost::make_tuple(alphahat, betahat, gammahat, epsilonhat, likelihood);
 }
 
 boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
@@ -221,25 +221,24 @@ boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
   typedef floats3D::index_range range;
   floats3D::index_gen indices;
 
-  // variables
-  HiddenMarkovModels::RealType likelihood;
-  HiddenMarkovModels::RealMatrixType A(get_nstates(), get_nstates()); // transition matrix for learned model
-  HiddenMarkovModels::RealMatrixType B(get_nstates(), get_nsymbols()); // emission matrix for learned model
+  // local variables
+  HiddenMarkovModels::RealType likelihood = 0;
+  HiddenMarkovModels::RealMatrixType transition(get_nstates(), get_nstates()); // transition matrix for learned model
+  HiddenMarkovModels::RealMatrixType emission(get_nstates(), get_nsymbols()); // emission matrix for learned model
   HiddenMarkovModels::RealVectorType pi(get_nstates()); // initial distribution for learned model
-  boost::multi_array< HiddenMarkovModels::RealType, 3 > u(boost::extents[obseqs.size()][get_nstates()][get_nstates()]);
-  boost::multi_array< HiddenMarkovModels::RealType, 3 > w(boost::extents[obseqs.size()][get_nstates()][get_nsymbols()]);
-  HiddenMarkovModels::RealMatrixType v(obseqs.size(), get_nstates());
-  HiddenMarkovModels::RealMatrixType x(obseqs.size(), get_nstates());
+  HiddenMarkovModels::RealMatrixType u(get_nstates(),get_nstates());
+  HiddenMarkovModels::RealMatrixType w(get_nstates(),get_nsymbols());
+  HiddenMarkovModels::RealVectorType v(get_nstates());
+  HiddenMarkovModels::RealVectorType x(get_nstates());
   
   // initializations
-  pi = ublas::zero_vector< HiddenMarkovModels::RealType >(get_nstates());
-  v = ublas::zero_matrix< HiddenMarkovModels::RealType >(obseqs.size(), get_nstates());
-  x = ublas::zero_matrix< HiddenMarkovModels::RealType >(obseqs.size(), get_nstates());
-  std::fill(u.data(), u.data()+u.num_elements(), 0);
-  std::fill(w.data(), w.data()+w.num_elements(), 0);
+  likelihood = 0;
+  pi = x = v = 0*_pi;
+  u = ublas::zero_matrix<HiddenMarkovModels::RealType >(u.size1(), u.size2());
+  w = ublas::zero_matrix<HiddenMarkovModels::RealType >(w.size1(), w.size2());
 
   // process all observations (assumed to be independent!)
-  for (int k = 0; k < obseqs.size(); k++)
+  for(int k = 0; k < obseqs.size(); k++)
     {
       // length of observation
       int T = obseqs[k].size();
@@ -259,30 +258,28 @@ boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
       // update likelihood
       likelihood += boost::get<4>(fb);
 
-      // calculate auxiliary tensors
-      for (int i = 0; i < get_nstates(); i++)
+      // update pi
+      pi += row(gammahat, 0);
+
+      // update auxiliary tensors
+      for(int i = 0; i < get_nstates(); i++)
 	{
-	  pi[i] += gammahat(0, i);
-	  for (int time = 0; time < T; time++)
+	  x[i] += sum(column(gammahat, i));
+	  v[i] += sum(column(gammahat, i)) - gammahat(T-1, i);
+	  for(int j = 0; j < get_nstates(); j++)
 	    {
-	      x(k, i) += gammahat(time, i);
-	      if (time < T-1)
+	      for(int time = 0; time < T-1; time++)
 		{
-		  v(k, i) += gammahat(time, i);
-		  for (int j = 0; j < get_nstates(); j++)
-		    {
-		      u[k][i][j] += epsilonhat[time][i][j];
-		    }
+		      u(i,j) += epsilonhat[time][i][j];
 		}
 	    }
-
-	  for (int j = 0; j < get_nsymbols(); j++)
+	  for(int j = 0; j < get_nsymbols(); j++)
 	    {
-	      for (int time = 0; time < T; time++)
+	      for(int time = 0; time < T; time++)
 		{
 		  if (obseqs[k][time] == j)
 		    {
-		      w[k][i][j] += gammahat(time, i);
+		      w(i,j) += gammahat(time, i);
 		    }
 		}
 	    }
@@ -290,24 +287,14 @@ boost::tuple<HiddenMarkovModels::DiscreteHMM, // the learned model
     }
 
   // compute learned model parameters
-  pi /= obseqs.size(); // normalization
-  for (int i = 0; i < get_nstates(); i++)
+  pi /= obseqs.size(); // XXX if this normalization doesn't make pi sum to 1, then the something is horribly wrong with the code!!!
+  for(int i = 0; i < get_nstates(); i++)
     {
-      HiddenMarkovModels::RealType total1 = sum(column(v, i));
-      HiddenMarkovModels::RealType total2 = sum(column(x, i));
-      for (int j = 0; j < get_nstates(); j++)
-	{
-	  floats3D::array_view<1>::type view1Du = u[indices[range()][i][j]];
-	  A(i, j) = std::accumulate(view1Du.begin(), view1Du.end(), 0.0)/total1;
-	}
-      for (int j = 0; j < get_nsymbols(); j++)
-	{
-	  floats3D::array_view<1>::type view1Dv = w[indices[range()][i][j]];
-	  B(i, j) = std::accumulate(view1Dv.begin(), view1Dv.end(), 0.0)/total2;
-	}
+      row(transition, i) = row(u, i)/v[i];
+      row(emission, i) = row(w, i)/x[i];
     }
 
-  return boost::make_tuple(HiddenMarkovModels::DiscreteHMM(A, B, pi), likelihood);
+  return boost::make_tuple(HiddenMarkovModels::DiscreteHMM(transition, emission, pi), likelihood);
 }
 
 HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baumwelch(const std::vector< HiddenMarkovModels::ObservationSequenceType > &obseqs,
