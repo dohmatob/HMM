@@ -15,7 +15,3 @@ target_link_libraries(multiple_sequence_baumwelch HMM)
 
 add_executable(multiple_sequence_baumwelch2 multiple_sequence_baumwelch2.cxx)
 target_link_libraries(multiple_sequence_baumwelch2 HMM)
-
-add_executable(learn learn.cxx)
-target_link_libraries(learn HMM)
-
