@@ -26,7 +26,7 @@ int main(int argc, const char *argv[])
 
   // initialize HMM object
   DiscreteHMM hmm(trans, em, pi);
-  std::cout << "HMM:" << std::endl << hmm;
+  std::cout << "HMM:" << std::endl << hmm << std::endl;
 
   // prepare data
   std::cout << std::endl << "Loadin: english words from corpus file .." << std::endl;
