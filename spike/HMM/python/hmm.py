@@ -20,7 +20,7 @@ def normalize(x, dtype='float64'):
     if x.ndim == 1:
         return x/x.sum()
     else:
-        return x/numpy.repeat(x.sum(axis=1), x.shape[1], axis=0).reshape(x.shape)
+        return x/numpy.array([x.sum(axis=1),]*x.shape[1]).T
 
 def is_stochastic(x):
     assert x.ndim in [1, 2] # vector or matrix
@@ -208,8 +208,8 @@ class DiscreteHMM:
                 w[...,j] += fb.get('gammahat')[numpy.nonzero(numpy.array(obseq)==j)[0],...].sum(axis=0) 
                 
         # compute transition and emission probabilities
-        transition = u/numpy.repeat(v, u.shape[1], axis=0).reshape(u.shape)
-        emission = w/numpy.repeat(x, w.shape[1], axis=0).reshape(w.shape)
+        transition = u/numpy.array([v,]*u.shape[1]).T
+        emission = w/numpy.array([x,]*w.shape[1]).T
 
         # render results
         return {'transition':transition, 'emission':emission, 'pi':pi, 'likelihood':likelihood}
