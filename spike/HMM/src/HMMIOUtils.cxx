@@ -12,7 +12,7 @@ std::ostream& HiddenMarkovModels::operator<<(std::ostream& cout, const HiddenMar
 {
   cout << "transition = " << dhmm.get_transition() << std::endl;
   cout << "emission = " << dhmm.get_emission() << std::endl;
-  cout << "pi = " << dhmm.get_pi() << std::endl;
+  cout << "pi = " << dhmm.get_pi();
 
   return cout;
 }
