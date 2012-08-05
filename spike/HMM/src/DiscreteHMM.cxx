@@ -360,7 +360,7 @@ HiddenMarkovModels::RealType HiddenMarkovModels::DiscreteHMM::baumwelch(const st
       iteration++;
     }
 
-  std::cout << "Final: " << std::endl << *this << std::endl;
+  std::cout << "Final model: " << std::endl << *this << std::endl;
   std::cout << "Likelihood: " << likelihood << std::endl;
   std::cout << "Relative gain in likelihood over last iteration: " << relative_gain << std::endl;
 
