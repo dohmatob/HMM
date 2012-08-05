@@ -7,9 +7,11 @@
 #     - Refactor the code
 #     - Documentation with sphinx
 #     - Profiling 
+#     - Cython optimization
 
 import numpy
 import unittest
+import os
 
 def normalize(x, dtype='float64'):
     assert x.ndim in [1,2] # vector or matrix
@@ -131,6 +133,7 @@ class DiscreteHMM:
         return self._emission.shape[1]
 
     def forward_backward(self, obseq):
+        # local variables
         T = len(obseq)
         scalers = numpy.zeros(T);
         alphatilde = numpy.zeros((T, self.get_nstates()))
@@ -145,28 +148,24 @@ class DiscreteHMM:
             if time == 0:
                 alphatilde[time,...] = self._pi*self._emission[...,obseq[time]]
             else:
-                for i in xrange(self.get_nstates()):
-                    alphatilde[time,i] = alphahat[time-1,...].dot(self._transition[...,i])*self._emission[i,obseq[time]]
+                alphatilde[time,...] = numpy.sum(numpy.array([alphahat[time-1,...],]*self.get_nstates()).T*self._transition, axis=0)*self._emission[...,obseq[time]]
             scalers[time] = 1/alphatilde[time,...].sum()
             alphahat[time,...] = scalers[time]*alphatilde[time,...]
-
+            
         # compute backward (beta) variables
         for time in xrange(T):
             reverse_time = T-1-time
             if reverse_time == T-1:
                 betatilde[reverse_time,...] = 1
             else:
-                for i in xrange(self.get_nstates()):
-                    betatilde[reverse_time,i] = numpy.sum(self._transition[i,...]*self._emission[...,obseq[reverse_time+1]]*betahat[reverse_time+1,...])
+                betatilde[reverse_time,...] = numpy.sum(self._transition*numpy.array([self._emission[...,obseq[reverse_time+1]]*betahat[reverse_time+1,...],]*self.get_nstates()),axis=1)
             betahat[reverse_time,...] = scalers[reverse_time]*betatilde[reverse_time,...]
 
         # compute epsilon and gamma terms
+        gammahat = alphahat*betahat/numpy.array([scalers,]*self.get_nstates()).T
         for time in xrange(T):
-            gammahat[time,...] = alphahat[time,...]*betahat[time,...]/scalers[time]
             if time < T-1:
-                for i in xrange(self.get_nstates()):
-                    for j in xrange(self.get_nstates()):
-                        epsilonhat[time,i,j] = alphahat[time,i]*self._transition[i,j]*self._emission[j,obseq[time+1]]*betahat[time+1,j]
+                epsilonhat[time,...,...] = numpy.array([alphahat[time,...],]*self.get_nstates()).T*self._transition*numpy.array([self._emission[...,obseq[time+1]]*betahat[time+1,...],]*self.get_nstates())
 
         # compute likelihood
         likelihood = -numpy.sum(numpy.log(scalers))
@@ -217,8 +216,9 @@ class DiscreteHMM:
 
     def learn(self,
               obseqs,
-              tolerance=1e-10,
-              maxiterations=1000,
+              tolerance=1e-7,
+              miniterations=50,
+              maxiterations=100,
               method='baumwelch'):
         iteration = 0
         likelihood = -numpy.inf
@@ -238,7 +238,7 @@ class DiscreteHMM:
             print "Model likelihood:", result.get('likelihood')
 
             # converged ?
-            if result.get('likelihood') == 0:
+            if result.get('likelihood') == 0 and miniterations <= iteration:
                 print "Model converged (to global optimum) after %d iterations."%iteration
                 break
 
@@ -251,7 +251,7 @@ class DiscreteHMM:
             print 
 
             # converged ?
-            if relative_gain < tolerance:
+            if relative_gain < tolerance and miniterations <= iteration:
                 print "Model converged after %d iterations (tolerance was set to %s)."%(iteration,tolerance)
                 break
 
@@ -315,52 +315,55 @@ class TestDiscreteHMM(unittest.TestCase):
         self.assertEqual(dhmm.get_nsymbols(), 2)
 
         
-    # def test_constructor_with_sizes(self):
-    #     dhmm = DiscreteHMM(pi=numpy.array([0.6, 0.4]), nsymbols=3)
-    #     self.assertTrue(is_stochastic(dhmm.get_transition()))
-    #     self.assertTrue(is_stochastic(dhmm.get_emission()))
-    #     self.assertTrue(is_stochastic(dhmm.get_pi()))
-    #     self.assertEqual(dhmm.get_nstates(), 2)
-    #     print dhmm.learn([[0,1,0,0,1,1]], maxiterations=1000)
-    #     self.assertEqual(dhmm.get_nsymbols(), 3)
+    def test_constructor_with_sizes(self):
+        dhmm = DiscreteHMM(pi=numpy.array([0.6, 0.4]), nsymbols=3)
+        self.assertTrue(is_stochastic(dhmm.get_transition()))
+        self.assertTrue(is_stochastic(dhmm.get_emission()))
+        self.assertTrue(is_stochastic(dhmm.get_pi()))
+        self.assertEqual(dhmm.get_nstates(), 2)
+        self.assertEqual(dhmm.get_nsymbols(), 3)
 
     def test_badass(self):
-        dhmm = DiscreteHMM(nstates=2, nsymbols=26)
-        lessons = list(chopper('data/corpus_words.dat'))
-        numpy.random.shuffle(lessons)
-        dhmm.learn(lessons[:500])
-
-        print 
-        print 'Viterbi classification of 26 symbols (cf. letters of the English alphabet):'
-        clusters = dict()
-        for i in xrange(26):
-            letter = chr(ord('A')+i)
-            class_label = dhmm.viterbi_decode([i]).get('states')[0]
-            if i == 0:
-                # 'a' is a vowel and 'a' is not a consonant
-                clusters[class_label] = 'vowel'
-                clusters[1-class_label] = 'consonant'
-            print '\t%s is a %s'%(letter,clusters[class_label])
-
-        # dhmm = DiscreteHMM(transition=numpy.array([[0.45,0.35,0.20],[0.10,0.50,0.40],[0.15,0.25,0.60]], dtype='float64'),
-        #                   emission=numpy.array([[1,0],[0.5,0.5],[0,1]], dtype='float64'),
-        #                   pi=numpy.array([0.5, 0.3, 0.2], dtype='float64'),
-        #                   )
+        dhmm = DiscreteHMM(transition=numpy.array([[0.45,0.35,0.20],[0.10,0.50,0.40],[0.15,0.25,0.60]], dtype='float64'),
+                          emission=numpy.array([[1,0],[0.5,0.5],[0,1]], dtype='float64'),
+                          pi=numpy.array([0.5, 0.3, 0.2], dtype='float64'),
+                          )
           
-        # dhmm.learn([[0,1,1,0,0]], maxiterations=13)
-        # print str(dhmm)
+        dhmm.learn([[0,1,1,0,0]])
+        print str(dhmm)
 
-    def test_viterbi(self):
-        dhmm = DiscreteHMM(transition=numpy.array([[0.4,0.6],[0.6,0.4]]),
-                           emission=numpy.array([[0.67,0.33],[0.41,0.59]]),
-                           pi=numpy.array([0.75,0.25]),
-                           )
+    # def test_viterbi(self):
+    #     dhmm = DiscreteHMM(transition=numpy.array([[0.4,0.6],[0.6,0.4]]),
+    #                        emission=numpy.array([[0.67,0.33],[0.41,0.59]]),
+    #                        pi=numpy.array([0.75,0.25]),
+    #                        )
 
-        self.assertEqual(dhmm.viterbi_decode([1,0,0,1,0,1]).get('states'), [0,1,0,1,0,1])
+    #     self.assertEqual(dhmm.viterbi_decode([1,0,0,1,0,1]).get('states'), [0,1,0,1,0,1])
 
-                           
+              
+def main():
+    dhmm = DiscreteHMM(nstates=2, nsymbols=26)
+    lessons = list(chopper('data/corpus_words.dat'))
+    numpy.random.shuffle(lessons)
+    dhmm.learn(lessons[:500], tolerance=1e-6)
+    
+    print 
+    print 'Viterbi classification of 26 symbols (cf. letters of the English alphabet):'
+    clusters = dict()
+    for i in xrange(26):
+        letter = chr(ord('A')+i)
+        class_label = dhmm.viterbi_decode([i]).get('states')[0]
+        if i == 0:
+            # 'a' is a vowel and 'a' is not a consonant
+            clusters[class_label] = 'vowel'
+            clusters[1-class_label] = 'consonant'
+        print '\t%s is a %s'%(letter,clusters[class_label])
+
 if __name__ == '__main__':
-    unittest.main()
+    if 'TEST' in os.environ:
+        unittest.main()
+    else:
+        main()
 
 
 
