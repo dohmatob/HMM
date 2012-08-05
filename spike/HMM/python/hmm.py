@@ -313,7 +313,6 @@ class TestDiscreteHMM(unittest.TestCase):
         self.assertTrue(is_stochastic(dhmm.get_pi()))
         self.assertEqual(dhmm.get_nstates(), 2)
         self.assertEqual(dhmm.get_nsymbols(), 2)
-
         
     def test_constructor_with_sizes(self):
         dhmm = DiscreteHMM(pi=numpy.array([0.6, 0.4]), nsymbols=3)
