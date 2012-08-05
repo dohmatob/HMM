@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
   // initialize DiscreteHMM object
   DiscreteHMM dhmm(trans, em, pi);
-  std::cout << "Initial model: " << std::endl << dhmm << std::endl;
+  std::cout << "Initial model: " << std::endl << dhmm << std::endl << std::endl;
 
   // prepare observation sequences
   std::vector < ObservationSequenceType > obseqs;
