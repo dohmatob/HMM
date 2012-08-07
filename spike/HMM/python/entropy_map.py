@@ -82,10 +82,8 @@ def entropic_estimate(omega,
         assert all(isreal(g))
         g = real(g)
         
-        # check against division by zero
-        if any(g == 0):
-            print 'Fatal!'
-            break
+        # check against division by zero (btw we re-scaled Z to prevent this)
+        assert all(g != 0)
 
         # re-estimate theta
         theta_hat = (-omega/Z)/g 
