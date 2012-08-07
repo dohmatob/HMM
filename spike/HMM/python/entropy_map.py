@@ -62,6 +62,7 @@ def entropic_estimate(omega,
         relative_gain = abs((_lambda - _lambda_hat)/_lambda)        
         print "\tRelative gain in lambda over last iteration: %s"%relative_gain
         print
+
         # converged ?
         if relative_gain < tol:
             print "entropic_estimate: converged after %d iterations (tolerance was set to %s)"%(iteration,tol)
