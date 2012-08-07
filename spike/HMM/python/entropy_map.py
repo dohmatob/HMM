@@ -30,8 +30,8 @@ def entropic_estimate(omega,
     assert Z != 0
 
     # all arrays must be numpy-like
-    omega = array(omega)
-    theta = array(theta)
+    omega = array(omega, dtype='float64')
+    theta = array(theta, dtype='float64')
 
     # prepare initial _lambda which will ensure that Lambert's W is real-valued
     if Z > 0:
@@ -65,7 +65,7 @@ def entropic_estimate(omega,
                 new_Z = min([Z, -_lambda/_BEAR])
             if Z != new_Z:
                 Z = new_Z
-                print "N.B: Re-scaled learning rate (Z) to %s so Lambert's W function doesn't vanish."%Z
+                print "N.B: Re-scaled learning rate (-Z) to %s so Lambert's W function doesn't vanish."%(Z)
 
         # prepare argument for Lambert's W function
         z = -omega*exp(1 + _lambda/Z)/Z
