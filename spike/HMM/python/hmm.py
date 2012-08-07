@@ -356,7 +356,7 @@ def main():
     dhmm = DiscreteHMM(nstates=2, nsymbols=26)
     lessons = list(chopper('data/corpus_words.dat'))
     numpy.random.shuffle(lessons)
-    dhmm.learn(lessons[:500])
+    dhmm.learn(lessons[:500],maxiterations=100)
     
     print 
     print 'Viterbi classification of 26 symbols (cf. letters of the English alphabet):'
