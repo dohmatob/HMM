@@ -16,7 +16,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(sys.argv[0])) + "/python")
 from probability import normalize, almost_uniform_matrix, almost_uniform_vector, is_stochastic
-    
+from entropy_map import entropic_reestimate
 
 def chopper(filename):
     ifh = open(filename)
