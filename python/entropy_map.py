@@ -1,4 +1,4 @@
-# (c) DOP (dohmato elvis dopgima)
+# (c) DOP (dohmatob elvis dopgima)
 #
 # Inspired by Matthiew Brand's "Pattern learning via entropy maximization"
 
