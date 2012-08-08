@@ -2,12 +2,19 @@
 #
 # Inspired by Matthiew Brand's "Pattern learning via entropy maximization"
 
-import scipy.special.lambertw as W
+import unittest
+import scipy.special.lambertw as W # Lambert's W function
 from scipy import e, isreal
 from numpy import sum, log, exp, abs, min, max, inf, nonzero, all, array, real, mean
 
+import sys
+import os
+sys.path.append(os.path.dirname(sys.argv[0]))
+from probability import normalize, almost_uniform_vector
+
 # constants
-_BEAR = -50 # exp(-x) is near 0 for x > _BEAR
+_BEAR = 100 # exp(-x) is near 0 for x > _BEAR
+
 
 def normalize_probabilities(x):
     """
@@ -15,7 +22,7 @@ def normalize_probabilities(x):
     """
     return x/sum(x, dtype='float64')
 
-def entropic_estimate(omega, 
+def entropic_reestimate(omega, 
                       theta, 
                       Z=1, # relative importance of entropy over likelihood
                       maxiter=100, 
@@ -60,14 +67,14 @@ def entropic_estimate(omega,
         # if necessary, re-scale learning rate (Z) so that exp(1 + _lambda/Z) is not 'too small'
         if _lambda < 0:
             if Z > 0:
-                new_Z = max([Z, -_lambda/_BEAR])
+                new_Z = -_lambda/_BEAR
             elif Z < 0:
-                new_Z = min([Z, -_lambda/_BEAR])
+                new_Z = _lambda/_BEAR
             if Z != new_Z:
                 Z = new_Z
-                print "N.B: Re-scaled learning rate (-Z) to %s so Lambert's W function doesn't vanish."%(Z)
+                print "N.B: Re-scaled learning rate (Z) to %s so Lambert's W function doesn't vanish."%(Z)
 
-        # prepare argument for Lambert's W function
+        # prepare argument (vector) for Lambert's W function
         z = -omega*exp(1 + _lambda/Z)/Z
         assert all(isreal(z)) 
         if any(z < -1/e):
@@ -110,9 +117,9 @@ def entropic_estimate(omega,
 
     # converged ?
     if relative_gain < tol:
-        print "entropic_estimate: loop converged after %d iterations (tolerance was set to %s)"%(iteration,tol)
+        print "entropic_reestimate: loop converged after %d iterations (tolerance was set to %s)"%(iteration,tol)
     else:
-        print "entropic_estimate: loop did not converge after %d iterations (tolerance was set to %s)"\
+        print "entropic_reestimate: loop did not converge after %d iterations (tolerance was set to %s)"\
             %(maxiter,tol)
 
     print "Final learning rate (Z):", Z    
@@ -121,11 +128,19 @@ def entropic_estimate(omega,
     # render results
     return theta_hat, Z, _lambda
 
-if __name__ == '__main__':
-    from hmm import almost_uniform_vector
-    
-    omega = [1, 2]
+def test_normalize_uniform_probabilities():
+    a = array([1, 1, 1])
+    u = normalize_probabilities(a) 
+    assert all(3*u == 1)
+
+def test_normalize_nonuniform_probabilities():
+    a = array([3, 0, 3])
+    u = normalize_probabilities(a) 
+    assert u[0] == u[2] == 0.5 == 0.5 - u[1]
+
+if __name__ == '__main__':    
+    omega = [1, 2, 3]
     theta = almost_uniform_vector(len(omega))
-    theta_hat = entropic_estimate(omega, theta, Z=1)
+    theta_hat = entropic_reestimate(omega, theta, Z=1)
 
     
