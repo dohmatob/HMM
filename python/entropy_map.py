@@ -15,25 +15,31 @@ from probability import normalize, almost_uniform_vector
 # constants
 _BEAR = 100 # exp(-x) is near 0 for x > _BEAR
 
-
 def normalize_probabilities(x):
     """
     Function to normalize a probability vector so it becomes stochasitc
     """
     return x/sum(x, dtype='float64')
 
+""" 
+Re-estimates a parameter (statistic) theta = (theta[0], theta[1], ...) based on evidence vector omega.
+XXX omega should contain no zero evidence and theta should have no zero coordinates (if these conditions fail,
+then simply trim off the offending parameters!)
+
+- **parameters**, **types**, **return** and **return types**::
+
+:param omega: evidence vector
+:param theta: parameter vector to be re-estimated using the given evidence
+:Z: learning rate 
+:maxiter: maximum number of iterations of Fixed-point loop
+:tol: tolerance level for convergence in Langrange multiplier (_lambda)
+"""
 def entropic_reestimate(omega, 
-                      theta, 
-                      Z=1, # relative importance of entropy over likelihood
-                      maxiter=100, 
-                      tol=1e-7,
-                      ):
-    """
-    Re-estimates a parameter (statistic) theta = (theta[0], theta[1], ...) based on evidence vector omega.
-    XXX omega should contain no zero evidence and theta should have no zero coordinates (if these conditions fail,
-    then simply trim off the offending parameters!)
-    """
-    
+                        theta,
+                        Z=1,
+                        maxiter=100, 
+                        tol=1e-7, 
+                        ):
     assert Z != 0
 
     # all arrays must be numpy-like
@@ -63,6 +69,7 @@ def entropic_reestimate(omega,
         print 'Current parameter estimate:\n%s'%theta
         print 'lambda:', _lambda
         print "Relative gain in lambda over last iteration: %s"%relative_gain
+        print "Learning rate (Z):", Z
 
         # if necessary, re-scale learning rate (Z) so that exp(1 + _lambda/Z) is not 'too small'
         if _lambda < 0:
@@ -70,9 +77,9 @@ def entropic_reestimate(omega,
                 new_Z = -_lambda/_BEAR
             elif Z < 0:
                 new_Z = _lambda/_BEAR
-            if Z != new_Z:
+            if new_Z != Z:
                 Z = new_Z
-                print "N.B: Re-scaled learning rate (Z) to %s so Lambert's W function doesn't vanish."%(Z)
+                print "N.B:- We'll re-scale learning rate (Z) to %s to prevent Lambert's W function from vanishing."%(Z)
 
         # prepare argument (vector) for Lambert's W function
         z = -omega*exp(1 + _lambda/Z)/Z
@@ -114,6 +121,10 @@ def entropic_reestimate(omega,
         print
 
     print "Done."
+    print 'Final parameter estimate:\n%s'%theta
+    print 'lambda:', _lambda
+    print "Relative gain in lambda over last iteration: %s"%relative_gain
+    print "Learning rate (Z):", Z
 
     # converged ?
     if relative_gain < tol:
@@ -121,9 +132,6 @@ def entropic_reestimate(omega,
     else:
         print "entropic_reestimate: loop did not converge after %d iterations (tolerance was set to %s)"\
             %(maxiter,tol)
-
-    print "Final learning rate (Z):", Z    
-    print "Final parameters:\n%s"%theta_hat
 
     # render results
     return theta_hat, Z, _lambda
@@ -141,6 +149,6 @@ def test_normalize_nonuniform_probabilities():
 if __name__ == '__main__':    
     omega = [1, 2, 3]
     theta = almost_uniform_vector(len(omega))
-    theta_hat = entropic_reestimate(omega, theta, Z=1)
+    theta_hat = entropic_reestimate(omega, theta, Z=1, maxiter=2)
 
     
