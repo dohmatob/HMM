@@ -18,12 +18,12 @@ import os
 sys.path.append(os.path.dirname(sys.argv[0]))
 from probability import normalize_probabilities, almost_uniform_vector
 
-#constants
+
 _BEAR = 100 # exp(-x) is near 0 for x > _BEAR
 
 def entropic_reestimate(omega, theta, Z=1, maxiter=100, tol=1e-7, verbose=False):
     """
-    Reeestimates a statistic parameter vector entropically [1]_.
+    Re-estimates a statistic parameter vector entropically [1]_.
     
     Parameters
     ----------
@@ -167,8 +167,5 @@ def entropic_reestimate(omega, theta, Z=1, maxiter=100, tol=1e-7, verbose=False)
     return theta_hat, Z, _lambda
 
 if __name__ == '__main__':    
-    omega = [1, 2, 3]
-    theta = almost_uniform_vector(len(omega))
-    theta_hat = entropic_reestimate(omega, theta, Z=1, maxiter=2)
-
+    doctest.testmod(verbose=True)
     
