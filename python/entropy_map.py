@@ -39,7 +39,7 @@ def entropic_reestimate(omega, theta, Z=1, maxiter=100, tol=1e-7, verbose=False)
         +1: Algorithm will seek maximum structure
     maxiter : int, optional
         Maximum number of iterations of Fixed-point loop (default 100)
-    verbose : bool, option
+    verbose : bool, optional
         Display verbose output (default off)
 
     Returns
