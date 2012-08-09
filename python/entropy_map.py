@@ -1,7 +1,13 @@
-# (c) DOP (dohmatob elvis dopgima)
-#
-# Inspired by Matthiew Brand's "Pattern learning via entropy maximization"
+"""
+:Module: entropy_map
+:Synopsis: Module contain core functions for doing entropic re-estimation of statistic parameters.
+:Author: DOP (dohmatob elvis dopgima)
 
+"""
+
+__all__ = ['entropic_reestimate', '_BEAR',]
+
+import doctest
 import unittest
 import scipy.special.lambertw as W # Lambert's W function
 from scipy import e, isreal
@@ -10,36 +16,60 @@ from numpy import sum, log, exp, abs, min, max, inf, nonzero, all, array, real, 
 import sys
 import os
 sys.path.append(os.path.dirname(sys.argv[0]))
-from probability import normalize, almost_uniform_vector
+from probability import normalize_probabilities, almost_uniform_vector
 
-# constants
+#constants
 _BEAR = 100 # exp(-x) is near 0 for x > _BEAR
 
-def normalize_probabilities(x):
+def entropic_reestimate(omega, theta, Z=1, maxiter=100, tol=1e-7, verbose=False):
     """
-    Function to normalize a probability vector so it becomes stochasitc
+    Reeestimates a statistic parameter vector entropically [1]_.
+    
+    Parameters
+    ----------
+    omega : array_like 
+        Evidence vector
+    theta : array_like 
+        Parameter vector to be re-estimated under given evidence and learning rate
+    Z : {-1, 0, +1}, optional
+        -1: Algorithm reduces to traditional MLE (e.g the Baum-Welch)
+
+        0: ?
+
+        +1: Algorithm will seek maximum structure
+    maxiter : int, optional
+        Maximum number of iterations of Fixed-point loop (default 100)
+    verbose : bool, option
+        Display verbose output (default off)
+
+    Returns
+    -------
+    theta_hat : array_like
+        Learned parameter vector
+    _lambda : float
+        Langrange multiplier
+    Z : float
+        Final Learning rate
+
+    Examples
+    --------
+    >>> from entropy_map import entropic_reestimate
+    >>> omega = [1, 2]
+    >>> theta = [0.50023755, 0.49976245]
+    >>> theta_hat = entropic_reestimate(omega, theta)
+    >>> theta_hat
+    (array([ 0.33177538,  0.66822462]), 0.030109771542978479, -3.0109771551554658)
+
+    References
+    ----------
+    .. [1] Matthiew Brand, "Pattern learning via entropy maximization"
+
     """
-    return x/sum(x, dtype='float64')
 
-""" 
-Re-estimates a parameter (statistic) theta = (theta[0], theta[1], ...) based on evidence vector omega.
-XXX omega should contain no zero evidence and theta should have no zero coordinates (if these conditions fail,
-then simply trim off the offending parameters!)
+    def _debug(msg=''):
+        if verbose:
+            print msg
 
-- **parameters**, **types**, **return** and **return types**::
-
-:param omega: evidence vector
-:param theta: parameter vector to be re-estimated using the given evidence
-:Z: learning rate 
-:maxiter: maximum number of iterations of Fixed-point loop
-:tol: tolerance level for convergence in Langrange multiplier (_lambda)
-"""
-def entropic_reestimate(omega, 
-                        theta,
-                        Z=1,
-                        maxiter=100, 
-                        tol=1e-7, 
-                        ):
     assert Z != 0
 
     # all arrays must be numpy-like
@@ -51,6 +81,7 @@ def entropic_reestimate(omega,
         critical_lambda = min(-Z*(2 + log(omega/Z)))
         _lambda = critical_lambda - 1 # or anything less than the critical value above
     elif Z < 0:
+        #  make an educated guess
         _lambda = -mean(Z*(log(theta) + 1) + omega/theta)
     assert all(-omega*exp(1+_lambda/Z)/Z > -1/e), -omega*exp(1+_lambda/Z)/Z 
     
@@ -58,18 +89,17 @@ def entropic_reestimate(omega,
     theta_hat = theta
     iteration = 0
     relative_gain = inf
-    print "entropy_map: starting Fixed-point loop .."
-    print
+    _debug("entropy_map: starting Fixed-point loop ..\n")
     while relative_gain >= tol:
         # exhausted ?
         if maxiter < iteration:
             break
 
-        print "Iteration: %d"%iteration
-        print 'Current parameter estimate:\n%s'%theta
-        print 'lambda:', _lambda
-        print "Relative gain in lambda over last iteration: %s"%relative_gain
-        print "Learning rate (Z):", Z
+        _debug("Iteration: %d"%iteration)
+        _debug('Current parameter estimate:\n%s'%theta)
+        _debug('lambda: %s'%_lambda)
+        _debug("Relative gain in lambda over last iteration: %s"%relative_gain)
+        _debug("Learning rate (Z): %s"%Z)
 
         # if necessary, re-scale learning rate (Z) so that exp(1 + _lambda/Z) is not 'too small'
         if _lambda < 0:
@@ -79,13 +109,13 @@ def entropic_reestimate(omega,
                 new_Z = _lambda/_BEAR
             if new_Z != Z:
                 Z = new_Z
-                print "N.B:- We'll re-scale learning rate (Z) to %s to prevent Lambert's W function from vanishing."%(Z)
+                _debug("N.B:- We'll re-scale learning rate (Z) to %s to prevent Lambert's W function from vanishing."%(Z))
 
         # prepare argument (vector) for Lambert's W function
         z = -omega*exp(1 + _lambda/Z)/Z
         assert all(isreal(z)) 
         if any(z < -1/e):
-            print "Lambert's W: arg %s out of range"%z
+            _debug("Lambert's W: argument z = %s out of range (-1/e, +inf)"%z)
             break
 
         # compute Lambert's W function at z
@@ -106,7 +136,7 @@ def entropic_reestimate(omega,
         theta_hat = normalize_probabilities(theta_hat)
 
         # re-estimate _lambda
-        _lambda_hat = -(Z*(log(theta_hat[0]) + 1) + omega[0]/theta_hat[0])
+        _lambda_hat = -(Z*(log(theta_hat[0]) + 1) + omega[0]/theta_hat[0]) # [0] or any other index [i]
 
         # compute relative gain in _lambda
         relative_gain = abs((_lambda - _lambda_hat)/_lambda)        
@@ -118,33 +148,23 @@ def entropic_reestimate(omega,
         # goto next iteration
         iteration += 1
 
-        print
+        _debug('\n')
 
-    print "Done."
-    print 'Final parameter estimate:\n%s'%theta
-    print 'lambda:', _lambda
-    print "Relative gain in lambda over last iteration: %s"%relative_gain
-    print "Learning rate (Z):", Z
+    _debug("Done.")
+    _debug('Final parameter estimate:\n%s'%theta)
+    _debug('lambda: %s'%_lambda)
+    _debug("Relative gain in lambda over last iteration: %s"%relative_gain)
+    _debug("Learning rate (Z): %s"%Z)
 
     # converged ?
     if relative_gain < tol:
-        print "entropic_reestimate: loop converged after %d iterations (tolerance was set to %s)"%(iteration,tol)
+        _debug("entropic_reestimate: loop converged after %d iterations (tolerance was set to %s)"%(iteration,tol))
     else:
-        print "entropic_reestimate: loop did not converge after %d iterations (tolerance was set to %s)"\
-            %(maxiter,tol)
+        _debug("entropic_reestimate: loop did not converge after %d iterations (tolerance was set to %s)"\
+            %(maxiter,tol))
 
     # render results
     return theta_hat, Z, _lambda
-
-def test_normalize_uniform_probabilities():
-    a = array([1, 1, 1])
-    u = normalize_probabilities(a) 
-    assert all(3*u == 1)
-
-def test_normalize_nonuniform_probabilities():
-    a = array([3, 0, 3])
-    u = normalize_probabilities(a) 
-    assert u[0] == u[2] == 0.5 == 0.5 - u[1]
 
 if __name__ == '__main__':    
     omega = [1, 2, 3]
