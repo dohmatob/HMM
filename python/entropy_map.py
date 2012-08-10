@@ -130,7 +130,7 @@ def entropic_reestimate(omega, theta, Z=1, maxiter=100, tol=1e-7, verbose=False)
         assert all(g != 0)
 
         # re-estimate theta
-        theta_hat = (omega/Z)/g 
+        theta_hat = (-omega/Z)/g 
 
         # normalize the approximated theta_hat parameter
         theta_hat = normalize_probabilities(theta_hat)
