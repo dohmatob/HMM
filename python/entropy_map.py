@@ -47,7 +47,7 @@ def entropic_reestimate(omega, theta, Z=1, maxiter=100, tol=1e-7, verbose=False)
     theta_hat : array_like
         Learned parameter vector
     _lambda : float
-        Langrange multiplier
+        Lagrange multiplier
     Z : float
         Final Learning rate
 
