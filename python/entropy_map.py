@@ -151,14 +151,14 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
         # re-estimate _lambda
         _lambda_hat = -(Z*(log(theta_hat[0]) + 1) + omega[0]/theta_hat[0]) # [0] or any other index [i]
 
-        # compute relative gain in _lambda
-        converged, _, relative_gain = check_converged(_lambda, _lambda_hat, tol=tol)
+        # check whether _lambda values have converged
+        converged, _, relative_error = check_converged(_lambda, _lambda_hat, tol=tol)
 
         # verbose for debugging, etc.
         _debug("Iteration: %d"%iteration)
         _debug('Current parameter estimate:\n%s'%theta)
         _debug('lambda: %s'%_lambda)
-        _debug("Relative gain in lambda over last iteration: %s"%relative_gain)
+        _debug("Relative error in lambda over last iteration: %s"%relative_error)
         _debug("Learning rate (Z): %s"%Z)
 
         # update _lambda and theta
@@ -173,11 +173,11 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
     _debug("Done.")
     _debug('Final parameter estimate:\n%s'%theta)
     _debug('lambda: %s'%_lambda)
-    _debug("Relative gain in lambda over last iteration: %s"%relative_gain)
+    _debug("Relative error in lambda over last iteration: %s"%relative_error)
     _debug("Learning rate (Z): %s"%Z)
 
     # converged ?
-    if relative_gain < tol:
+    if converged:
         _debug("entropic_reestimate: loop converged after %d iterations (tolerance was set to %s)"%(iteration,tol))
     else:
         _debug("entropic_reestimate: loop did not converge after %d iterations (tolerance was set to %s)"\
