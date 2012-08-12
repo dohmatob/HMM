@@ -5,7 +5,7 @@
 
 """
 
-__all__ = ['entropic_reestimate', '_BEAR',]
+__all__ = ['entropic_reestimate']
 
 import sys
 import os
@@ -22,7 +22,8 @@ from convergence import check_converged
 
 # constants
 _EPS = spacing(1) # relative floating-point accuracy (distance beween 1.0 and next floating-point number) 
-_BEAR = -2*log(_EPS) # exp(-x) < _EPS^2 (i.e near 0) for x > _BEAR
+_EPSILON = _EPS*2
+_BEAR = -2*log(_EPS) # exp(-x) < _EPSILON (i.e near 0) for x > _BEAR
 
 def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=False):
     """
@@ -140,7 +141,7 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
         
         # check against division by zero (btw we re-scaled Z to prevent this)
         # assert all(g != 0)
-        assert all(abs(g) > _EPS**2)
+        assert all(abs(g) > _EPSILON)
 
         # re-estimate theta
         theta_hat = (-omega/Z)/g 
