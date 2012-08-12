@@ -11,7 +11,7 @@ import doctest
 from numpy import sum, all, array, ones
 from numpy.random import normal
 
-def normalize_probabilities(x):
+def normalize_probabilities(x, dtype='float64'):
     """
     Function to normalize a probability vector so it becomes stochasitc.
     
@@ -19,6 +19,8 @@ def normalize_probabilities(x):
     ----------
     x : array_like
         probabilities to normalize
+    dtype : numpy dtype_like, optional
+        data type of the (output) probability terms (default 'float64')
     
     Returns
     -------
@@ -35,7 +37,10 @@ def normalize_probabilities(x):
     1.0
 
     """
-    return x/sum(x, dtype='float64')
+    if x.ndim == 1:
+        return x/sum(x, dtype='float64')
+    elif x.ndim == 2:
+        return x/array([sum(x, dtype='float64', axis=1),]*x.shape[1]).T
 
 def is_stochastic(x):
     assert x.ndim in [1, 2] # vector or matrix
