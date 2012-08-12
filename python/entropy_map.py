@@ -139,7 +139,8 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
         g = real(g)
         
         # check against division by zero (btw we re-scaled Z to prevent this)
-        assert all(g != 0)
+        # assert all(g != 0)
+        assert all(abs(g) > _EPS**2)
 
         # re-estimate theta
         theta_hat = (-omega/Z)/g 
@@ -151,7 +152,7 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
         # re-estimate _lambda
         _lambda_hat = -(Z*(log(theta_hat[0]) + 1) + omega[0]/theta_hat[0]) # [0] or any other index [i]
 
-        # check whether _lambda values have converged
+        # check whether _lambda values have convergede
         converged, _, relative_error = check_converged(_lambda, _lambda_hat, tol=tol)
 
         # verbose for debugging, etc.
