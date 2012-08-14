@@ -12,7 +12,7 @@
 
 __all__ = ['DiscreteHMM']
 
-from numpy import array, sum, nonzero, zeros, abs, inf, log, exp, arange, argmax
+from numpy import array, sum, nonzero, zeros, abs, inf, log, exp, arange, argmax, copy
 from numpy.random import shuffle
 import unittest
 import os
@@ -179,7 +179,9 @@ class DiscreteHMM:
                 expected_num_emissions[...,j] += fb.get('gammahat')[nonzero(array(obseq)==j)[0],...].sum(axis=0) 
 
         # render results
-        return {'expected_num_transitions':expected_num_transitions, 'expected_num_emissions':expected_num_emissions, 'expected_num_occurrences':expected_num_occurrences, 'likelihood':likelihood}
+        return {'expected_num_transitions':expected_num_transitions, \
+                    'expected_num_emissions':expected_num_emissions, \
+                    'expected_num_occurrences':expected_num_occurrences, 'likelihood':likelihood}
                 
     def do_baumwelch(self, obseqs):
         # compute expected sufficient statistics
@@ -201,19 +203,21 @@ class DiscreteHMM:
         # re-estimate model parameters using Matthiew Brand's entropic method
         transition = zeros(self._transition.shape)
         emission = zeros(self._emission.shape)
-        pi, _, _ = entropic_reestimate(ess.get('expected_num_occurrences'), self._pi)
+        pi, _, _ = entropic_reestimate(ess.get('expected_num_occurrences'), theta=copy(self._pi))
         for state in xrange(self.get_nstates()):
-            transition[state,...], _, _ = entropic_reestimate(ess.get('expected_num_transitions')[state,...], theta=self._transition[state,...])
-            emission[state,...], _, _ = entropic_reestimate(ess.get('expected_num_emissions')[state,...], theta=self._emission[state,...])
+            transition[state,...], _, _ = entropic_reestimate(ess.get('expected_num_transitions')[state,...], \
+                                                                  theta=copy(self._transition[state,...]))
+            emission[state,...], _, _ = entropic_reestimate(ess.get('expected_num_emissions')[state,...], \
+                                                                theta=copy(self._emission[state,...]))
 
         # trim uninformative transitions
-        denom = transition
+        denom = copy(transition)
         denom[nonzero(transition==0)] = 1
         gradient = ess.get('expected_num_transitions')/denom
         transition[nonzero(transition < exp(-gradient))] = 0
         
         # trim uninfirmative emissions
-        denom = emission
+        denom = copy(emission)
         denom[nonzero(emission==0)] = 1
         gradient = ess.get('expected_num_emissions')/denom
         emission[nonzero(emission < exp(-gradient))] = 0

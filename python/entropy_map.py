@@ -14,7 +14,7 @@ import doctest
 import unittest
 import scipy.special.lambertw as W # Lambert's W function
 from scipy import e, isreal
-from numpy import sum, log, exp, abs, min, max, inf, nonzero, all, array, real, mean, spacing, setdiff1d
+from numpy import sum, log, exp, abs, min, max, inf, nonzero, all, array, real, mean, spacing, minimum
 
 sys.path.append(os.path.dirname(sys.argv[0]))
 from probability import normalize_probabilities, almost_uniform_vector
@@ -90,23 +90,25 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
     theta = array(theta, dtype='float64')
 
     # XXX TODO: trim-off any evidence which 'relatively close to 0' (since such evidence can't justify anything!) 
-    pass
+    informative_indices = nonzero(minimum(omega, theta) > _EPSILON)
+    _omega = omega[informative_indices]
+    _theta = theta[informative_indices]
 
     # prepare initial _lambda which will ensure that Lambert's W is real-valued
     if Z > 0:
-        critical_lambda = min(-Z*(2 + log(omega/Z)))
+        critical_lambda = min(-Z*(2 + log(_omega/Z)))
         _lambda = critical_lambda - 1 # or anything less than the critical value above
     elif Z < 0:
         #  make an educated guess
-        _lambda = -mean(Z*(log(theta) + 1) + omega/theta)
-    assert all(-omega*exp(1+_lambda/Z)/Z > -1/e), -omega*exp(1+_lambda/Z)/Z 
+        _lambda = -mean(Z*(log(_theta) + 1) + _omega/_theta)
+    assert all(-_omega*exp(1+_lambda/Z)/Z > -1/e), -_omega*exp(1+_lambda/Z)/Z 
     
     # Fixed-point loop
-    theta_hat = theta
+    _theta_hat = _theta
     iteration = 0
     converged = False
     _debug("entropy_map: starting Fixed-point loop ..\n")
-    _debug("Initial model: %s"%theta)
+    _debug("Initial model: %s"%_theta)
     _debug("Initial lambda: %s"%_lambda)
     _debug("Initila learning rate (Z): %s"%Z)
     while not converged:
@@ -125,7 +127,7 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
                 _debug("N.B:- We'll re-scale learning rate (Z) to %s to prevent Lambert's W function from vanishing."%(Z))
 
         # prepare argument (vector) for Lambert's W function
-        z = -omega*exp(1 + _lambda/Z)/Z
+        z = -_omega*exp(1 + _lambda/Z)/Z
         assert all(isreal(z)) 
         if any(z < -1/e):
             _debug("Lambert's W: argument z = %s out of range (-1/e, +inf)"%z)
@@ -143,29 +145,29 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
         # assert all(g != 0)
         assert all(abs(g) > _EPSILON)
 
-        # re-estimate theta
-        theta_hat = (-omega/Z)/g 
-        assert all(theta_hat >= 0)
+        # re-estimate _theta
+        _theta_hat = (-_omega/Z)/g 
+        assert all(_theta_hat >= 0)
 
-        # normalize the approximated theta_hat parameter
-        theta_hat = normalize_probabilities(theta_hat)
+        # normalize the approximated _theta_hat parameter
+        _theta_hat = normalize_probabilities(_theta_hat)
 
         # re-estimate _lambda
-        _lambda_hat = -(Z*(log(theta_hat[0]) + 1) + omega[0]/theta_hat[0]) # [0] or any other index [i]
+        _lambda_hat = -(Z*(log(_theta_hat[0]) + 1) + _omega[0]/_theta_hat[0]) # [0] or any other index [i]
 
         # check whether _lambda values have convergede
         converged, _, relative_error = check_converged(_lambda, _lambda_hat, tol=tol)
 
         # verbose for debugging, etc.
         _debug("Iteration: %d"%iteration)
-        _debug('Current parameter estimate:\n%s'%theta)
+        _debug('Current parameter estimate:\n%s'%_theta)
         _debug('lambda: %s'%_lambda)
         _debug("Relative error in lambda over last iteration: %s"%relative_error)
         _debug("Learning rate (Z): %s"%Z)
 
-        # update _lambda and theta
+        # update _lambda and _theta
         _lambda = _lambda_hat
-        theta = theta_hat
+        _theta = _theta_hat
 
         # goto next iteration
         iteration += 1
@@ -173,7 +175,7 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
         _debug('\n')
 
     _debug("Done.")
-    _debug('Final parameter estimate:\n%s'%theta)
+    _debug('Final parameter estimate:\n%s'%_theta)
     _debug('lambda: %s'%_lambda)
     _debug("Relative error in lambda over last iteration: %s"%relative_error)
     _debug("Learning rate (Z): %s"%Z)
@@ -186,6 +188,8 @@ def entropic_reestimate(omega, theta=None, Z=1, maxiter=100, tol=1e-7, verbose=F
             %(maxiter,tol))
 
     # render results
+    theta_hat = 0*theta
+    theta_hat[informative_indices] = _theta_hat
     return theta_hat, Z, _lambda
 
 if __name__ == '__main__':    
