@@ -5,13 +5,15 @@ project(HMM)
 ##-- version stuff
 set(HMM_VERSION_CURRENT "0")
 set(HMM_VERSION_REVISION "0")
-set(HMM_VERSION_AGE "2")
+set(HMM_VERSION_AGE "1")
 set(HMM_VERSION "${HMM_VERSION_CURRENT}.${HMM_VERSION_REVISION}.${HMM_VERSION_AGE}")
 
 ##-- options
 option(BUILD_EXAMPLES "Build HMM usage examples (see Examples subdirectory)" ON)
 option(USE_OPENMP "Use OpenMP parallelization" ON)
 option(BUILD_DOC "Use Doxygen to build API documentation" OFF)
+
+add_definitions("-Wall")
 
 if(UNIX AND NOT WIN32)
   #-- set bin
@@ -69,13 +71,13 @@ if(UNIX AND NOT WIN32)
   file(
     GLOB_RECURSE
     source_files
-    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/*.cxx"
     )
   add_library(HMM ${HMM_LIBRARY_TYPE} ${source_files})
 
   #-- add Examples target
   if(BUILD_EXAMPLES)
-    add_subdirectory(Examples)
+    add_subdirectory(examples)
   endif(BUILD_EXAMPLES)
 
   message("

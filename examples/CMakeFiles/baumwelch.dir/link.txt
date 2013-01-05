@@ -1,0 +1,1 @@
+/usr/bin/c++    -fopenmp    CMakeFiles/baumwelch.dir/baumwelch.cxx.o  -o ../bin/baumwelch -rdynamic ../libHMM.so -Wl,-rpath,/home/elvis/CODE/FORKED/HMM 

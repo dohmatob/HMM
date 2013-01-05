@@ -1,0 +1,1 @@
+/usr/bin/c++    -fopenmp    CMakeFiles/viterbi.dir/viterbi.cxx.o  -o ../bin/viterbi -rdynamic ../libHMM.so -Wl,-rpath,/home/elvis/CODE/FORKED/HMM 

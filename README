@@ -6,22 +6,16 @@ Tiny project on Hidden Markov Models. It is still in active dev.
 ===============
 chdir to the root directory (containing this README), and type the commands:
 
-$ cmake .
-$ make 
-
-0.1 BUILD spike/HMM
-===================
-spike.HMM contains a 'experimental' versions of HMM. To build the spike/HMM, do
-$ cd spike/HMM
-$ cmake .
-$ make
+      cmake .
+      make 
 
 1. RUN DEMOS
 ============
-Simply type:
-$ ./bin/martian
-$ ./baumwelch
-$./multiple_sequence_baumwelch
+Simply type (in a terminal, of course!):
+      
+       ./bin/martian
+       ./baumwelch
+       ./multiple_sequence_baumwelch
 
 2. DEPENDENCIES
 ===============
