@@ -19,7 +19,7 @@ Simply type (in a terminal, of course!):
 
 2. DEPENDENCIES
 ===============
-- Boost c++ libraries (get from boost.org site)
+- Boost c++ libraries (get from boost.org site, or do 'apt-get install libboost-dev')
 - Doxygen (optional, for automatic in-source generation of API documentation)
 - OpenMP (optional, for parallelization)
 - CMake (version 2.6 or later)
